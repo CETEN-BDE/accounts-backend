@@ -1,0 +1,53 @@
+package db
+
+import (
+	"database/sql"
+	"errors"
+	"basic-project/internal/models"
+	"os"
+
+	"github.com/sirupsen/logrus"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
+)
+
+func InitDB() (*sql.DB, *gorm.DB, error) {
+    dsn := os.Getenv("PROJECT_TITLE_BACKEND_DSN")
+    db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+    if err != nil {
+        logrus.Fatalf("open db error: %v", err)
+    }
+    // Get the underlying sql.DB object to close the connection later
+    sqlDB, err := db.DB()
+    if err != nil {
+        logrus.Printf("get db error: %v", err)
+        return nil, nil, errors.New("get db error")
+    }
+    // Ping the database to check if the connection is successful
+    err = sqlDB.Ping()
+    if err != nil {
+        logrus.Printf("ping db error: %v", err)
+        return nil, nil, errors.New("ping db error")
+    }
+    logrus.Println("Database connection successful")
+    // Perform auto migration
+    err = db.AutoMigrate(models.Example{})
+    if err != nil {
+        logrus.Printf("auto migrate error: %v", err)
+        return nil, nil, errors.New("auto migrate error")
+    }
+    logrus.Println("Auto migration completed")
+
+    example := models.Example{}
+	result := db.First(&example)
+	if result.Error == gorm.ErrRecordNotFound {
+		example.Nb = 0
+		example.Status = "OK"
+		result_create := db.Create(&example)
+		if result_create.Error != nil {
+			logrus.Fatalf("create health error: %v", result_create.Error)
+			return nil, nil, errors.New("create health error")
+		}
+	}
+	return sqlDB, db, nil
+}

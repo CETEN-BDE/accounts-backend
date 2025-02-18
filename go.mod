@@ -10,7 +10,10 @@ require (
 	gorm.io/gorm v1.25.12
 )
 
-require github.com/joho/godotenv v1.5.1
+require (
+	github.com/caarlos0/env/v9 v9.0.0
+	github.com/joho/godotenv v1.5.1
+)
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect

@@ -1,10 +1,10 @@
 package db
 
 import (
+	"accounts/internal/config"
 	"accounts/internal/models"
 	"database/sql"
 	"errors"
-	"os"
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/driver/mysql"
@@ -12,7 +12,7 @@ import (
 )
 
 func InitDB() (*sql.DB, *gorm.DB, error) {
-    dsn := os.Getenv("accounts_BACKEND_DSN")
+    dsn := config.GetConfig().DbConfig.Dsn
     db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
     if err != nil {
         logrus.Fatalf("open db error: %v", err)

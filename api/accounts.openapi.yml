@@ -14,3 +14,15 @@ paths:
       responses:
         "200":
           description: "API Online"
+
+components:
+  securitySchemes:
+    googlauth:
+      type: apiKey
+      in: cookie
+      name: ACCT_SESS
+      description: Authenticated with Google OAuth, can complete OAuth flows
+    oauth:
+      type: openIdConnect
+      openIdConnectUrl: /.well-known/openid-configuration
+      description: OAuth tokens granted to other applications

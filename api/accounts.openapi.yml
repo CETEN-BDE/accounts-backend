@@ -1,7 +1,7 @@
 openapi: "3.0.3"
 info:
   title: OpenAPI - CETEN Accounts
-  version: "1.0.0"
+  version: "0.1.0"
   license:
     name: MIT
     url: https://opensource.org/license/mit/
@@ -13,51 +13,4 @@ paths:
     get:
       responses:
         "200":
-          description: "Health check"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Example"
-        "500":
-          description: "Error 500"
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/Message"
-components:
-  securitySchemes:
-    Ceten:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    BDE:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-    Admin:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-
-  schemas:
-    # base types
-    Example:
-      type: object
-      required:
-        - status
-        - nb
-      properties:
-        status:
-          type: string
-          example: "ok"
-        nb:
-          type: integer
-          example: 1
-    Message:
-      type: object
-      required:
-        - message
-      properties:
-        message:
-          type: string
-          example: "Error message"
+          description: "API Online"

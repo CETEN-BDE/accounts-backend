@@ -24,7 +24,7 @@ func main() {
 
 	defer sqlDB.Close()
 	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
-	server := api.NewServer(db)
+	var server autogen.ServerInterface = api.NewServer(db)
 
 	e := echo.New()
 

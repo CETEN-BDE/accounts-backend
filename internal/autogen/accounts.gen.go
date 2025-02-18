@@ -8,7 +8,6 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -19,17 +18,6 @@ import (
 	"github.com/labstack/echo/v4"
 	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
 )
-
-// Example defines model for Example.
-type Example struct {
-	Nb     int    `json:"nb" bson:"nb"`
-	Status string `json:"status" bson:"status"`
-}
-
-// Message defines model for Message.
-type Message struct {
-	Message string `json:"message" bson:"message"`
-}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -91,22 +79,12 @@ type GetHealthResponseObject interface {
 	VisitGetHealthResponse(w http.ResponseWriter) error
 }
 
-type GetHealth200JSONResponse Example
-
-func (response GetHealth200JSONResponse) VisitGetHealthResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(200)
-
-	return json.NewEncoder(w).Encode(response)
+type GetHealth200Response struct {
 }
 
-type GetHealth500JSONResponse Message
-
-func (response GetHealth500JSONResponse) VisitGetHealthResponse(w http.ResponseWriter) error {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(500)
-
-	return json.NewEncoder(w).Encode(response)
+func (response GetHealth200Response) VisitGetHealthResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
 }
 
 // StrictServerInterface represents all server handlers.
@@ -154,14 +132,11 @@ func (sh *strictHandler) GetHealth(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/6xTXWvVQBD9K2H0MWZTi1D2rdaoV6gKFnwofdi7d26ybbK7zk7Ecsl/l8neNH4UhOJL",
-	"MjBz5mTOOTmADUMMHj0n0AdItsPBzGXzwwyxRykjhYjEDueG38oTl/ZJCXwfETQ4z9giwVRCYsNj+m0O",
-	"wh08jCYm51uYphIIv42OcAf6eoGVwnHzMBy2t2hZ1l5iSqZ95JuGtbESNkSBiqX1L+5l7m9euQftSI7v",
-	"v4g+mfJ8NzgvxRYNIb0NNBgGDR++XkGZhZQlubuyd8xRTnn9pnk6+AIZn8wt9zi/D4LvnUWfZt28mTGX",
-	"G1kxUn+cT1qpENGnMJLFKlCrjiA1OFbyNex41vtTRH/+eVO8KC6aq+ZjcW5tGCVYJXxHSi540HBS1VUt",
-	"KFlqogMNp1VdnUIJ0XA3S6s6ND13UrbI8hKvDbvgNzvQ8A75fZ4QC1MMPmVPXta1vGzwjH4Gmhh7Z2eo",
-	"uk3BryGX6jnhHjQ8U+tfoI6/gFryP+u1w2TJRc43ZPLCdmjv5JRX/5F2ifgjtDnPQjZNU04libCgrw+/",
-	"OKaV6oM1fRcS67P6TNQ+/OGoydZUVoJU7UmJE9PN9DMAAP//S4lEzRAEAAA=",
+	"H4sIAAAAAAAC/1yQsW4rIRBFf8W6NQ94cWPRWZGVuEicwl2UAuGxFwkPCMZpVvvv0cQpotDMLThw7szI",
+	"fK4IM0pOxIM0crwSAl72RxjcekHAJNJGcK424lFvPZGt/eJ+IHfN4rAYSJai6KERb9/2q3+rx91x97ra",
+	"plRvLAMGn9RHrowAb/9br5Q+GltGwNp6u4ZBizINVXETxSKTxguJjtqoR8mV9ycEPJE8328YdBqt8qBv",
+	"8MF7HScaqecm9x9V6cAlM2HRYzCoqxDC+/yraXCu1BTLVIeEjd+o5fxnE/FeySYSYnvuThssH8tXAAAA",
+	"//91vRO5UgEAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

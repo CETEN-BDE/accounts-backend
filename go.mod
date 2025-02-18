@@ -1,4 +1,4 @@
-module basic-project
+module accounts
 
 go 1.22.8
 

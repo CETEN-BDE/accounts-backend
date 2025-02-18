@@ -2,8 +2,8 @@ package api
 
 import (
 
-	"basic-project/autogen"
-	"basic-project/internal/models"
+	"accounts/autogen"
+	"accounts/internal/models"
 
 	"github.com/labstack/echo/v4"
 	"github.com/sirupsen/logrus"

@@ -154,14 +154,14 @@ func (sh *strictHandler) GetHealth(ctx echo.Context) error {
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/6xSXWvVQBD9K2H0MWZTi1D2rWrVKxYFBR9KH/bunZtsm+yssxOxXPLfZZKbxo+CUHxJ",
-	"BuacOTtnzgE89YkiRslgD5B9i72byosfrk8dapmYErIEnBpxq19c2iclyF1CsBCiYIMMYwlZnAz5NxzQ",
-	"LdxDs3CIDYxjCYzfhsC4A3u10ErVuL4H0/YGvejYS8zZNQ+8qV8bq+AFM3GxtP6lveD+1tV90A8c5O6z",
-	"+jNLnu/6ELXYomPkN8S9E7Dw/usXKGcjdcjcXdVbkaSrvHx98XjyKxR8tLbuE+KelN8FjzFPvkU3cS43",
-	"OmLg7ojP1hhKGDMN7LEibsyRZPogRl8jQSa/PyaM5582xbPiAzWFLljCd+QcKIKFk6quaoXrNJcCWDit",
-	"6uoUSkhO2slT06LrpNWyQdGfHtlJoLjZgYW3KO9mhN4uJ4p5PsbzutafpygYJ6JLqQt+opqbTHFNt1ZP",
-	"Gfdg4YlZ42+O2TdL8Cejdpg9hyTzDrN44Vv0t7rKi/8ou2T7Adk5yCo2juMcR1ZjwV4dfjmVNaYj77qW",
-	"stiz+kzdPvxxyo6aymt6qj0bvcJ4Pf4MAAD//3oTbJUFBAAA",
+	"H4sIAAAAAAAC/6xTXWvVQBD9K2H0MWZTi1D2rdaoV6gKFnwofdi7d26ybbK7zk7Ecsl/l8neNH4UhOJL",
+	"MjBz5mTOOTmADUMMHj0n0AdItsPBzGXzwwyxRykjhYjEDueG38oTl/ZJCXwfETQ4z9giwVRCYsNj+m0O",
+	"wh08jCYm51uYphIIv42OcAf6eoGVwnHzMBy2t2hZ1l5iSqZ95JuGtbESNkSBiqX1L+5l7m9euQftSI7v",
+	"v4g+mfJ8NzgvxRYNIb0NNBgGDR++XkGZhZQlubuyd8xRTnn9pnk6+AIZn8wt9zi/D4LvnUWfZt28mTGX",
+	"G1kxUn+cT1qpENGnMJLFKlCrjiA1OFbyNex41vtTRH/+eVO8KC6aq+ZjcW5tGCVYJXxHSi540HBS1VUt",
+	"KFlqogMNp1VdnUIJ0XA3S6s6ND13UrbI8hKvDbvgNzvQ8A75fZ4QC1MMPmVPXta1vGzwjH4Gmhh7Z2eo",
+	"uk3BryGX6jnhHjQ8U+tfoI6/gFryP+u1w2TJRc43ZPLCdmjv5JRX/5F2ifgjtDnPQjZNU04libCgrw+/",
+	"OKaV6oM1fRcS67P6TNQ+/OGoydZUVoJU7UmJE9PN9DMAAP//S4lEzRAEAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

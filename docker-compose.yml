@@ -4,6 +4,6 @@ services:
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: changeme
-      MYSQL_DATABASE: PROJECT_TITLE
+      MYSQL_DATABASE: accounts
     ports:
       - "3306:3306"

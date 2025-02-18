@@ -1,9 +1,9 @@
 package main
 
 import (
-	"basic-project/api"
-	"basic-project/autogen"
-	"basic-project/internal/db"
+	"accounts/api"
+	"accounts/autogen"
+	"accounts/internal/db"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo/v4"

@@ -1,13 +1,13 @@
 openapi: "3.0.3"
 info:
-  title: OpenAPI - Log BDE
+  title: OpenAPI - CETEN Accounts
   version: "1.0.0"
   license:
     name: MIT
     url: https://opensource.org/license/mit/
 servers:
   - url: http://localhost:8080
-  - url: https://log.ceten.fr/api
+  - url: https://account.ceten.fr/api
 paths:
   /health:
     get:

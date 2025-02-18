@@ -1,8 +1,7 @@
 package api
 
 import (
-
-	"accounts/autogen"
+	"accounts/internal/autogen"
 	"accounts/internal/models"
 
 	"github.com/labstack/echo/v4"

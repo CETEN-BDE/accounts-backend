@@ -1,7 +1,7 @@
 package models
 
 import (
-	"accounts/autogen"
+	"accounts/internal/autogen"
 
 	"gorm.io/gorm"
 )

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"accounts/api"
-	"accounts/autogen"
+	"accounts/internal/api"
+	"accounts/internal/autogen"
 	"accounts/internal/db"
 
 	"github.com/joho/godotenv"

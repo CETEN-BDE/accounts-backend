@@ -350,6 +350,24 @@ components:
             $ref: "#/components/schemas/OAuthScope"
       required:
         - grant_type
+    OAuthRefreshTokenTokenRequest:
+      description: Request an access token using a refresh token *([spec](https://datatracker.ietf.org/doc/html/rfc6749#section-6))*
+      type: object
+      properties:
+        grant_type:
+          type: string
+          enum:
+            - refresh_token
+        refresh_token:
+          $ref: "#/components/schemas/OAuthRefreshToken"
+        scope:
+          type: array
+          description: Scope of the access request, if different from the original one
+          items:
+            $ref: "#/components/schemas/OAuthScope"
+      required:
+        - grant_type
+        - refresh_token
     TokenType:
       description: Type of token to use for authentication. Currently, only "Bearer" is supported.
       type: string

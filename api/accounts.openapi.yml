@@ -8,6 +8,9 @@ info:
 servers:
   - url: http://localhost:8080
   - url: https://account.ceten.fr/api
+tags:
+  - name: oauth
+    description: Anything related to OAuth
 paths:
   /health:
     get:
@@ -15,7 +18,212 @@ paths:
         "200":
           description: "API Online"
 
+  # OAuth and OpenID Connect
+  /oauth/authorize:
+    get:
+      summary: Start an OAuth flow
+      operationId: startAuthorizationFlow
+      description: |
+        Start an OAuth flow to request an access token with the specified scopes from a user.
+        This will prompt the end user to login if he is not authenticated.
+      tags:
+        - oauth
+      parameters:
+        - in: query
+          name: response_type
+          description: |
+            Type(s) of oauth response expected, comma-separated. `none` cannot be used with other response types.
+
+            See [specification](https://openid.net/specs/oauth-v2-multiple-response-types-1_0.html#Combinations) for allowed combinations.
+          required: true
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/OIDCResponseType"
+              minItems: 1
+              maxItems: 3
+          explode: false
+        - in: query
+          name: client_id
+          required: true
+          schema:
+            type: integer
+            format: uint64
+            example: 12345678
+        - in: query
+          name: redirect_uri
+          required: true
+          schema:
+            type: string
+            format: url
+            example: "http://localhost:8080/callback"
+        - in: query
+          name: scope
+          required: true
+          description: Scopes to request to the end user. MUST include the `openid` scope
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/OAuthScope"
+            minItems: 1
+          example: "openid"
+          explode: false
+        - in: query
+          name: state
+          description: |
+            Opaque value that will be returned to the redirect URI as a query parameter if present.
+
+            It SHOULD be used to [prevent CSRF attacks](https://datatracker.ietf.org/doc/html/rfc6749#section-10.12)
+          schema:
+            type: string
+        - in: query
+          name: nonce
+          schema:
+            type: string
+          description: |
+            Opaque value that will be embeded in the `id_token`, to mitigate replay attacks.
+
+            See [OIDC spec](https://openid.net/specs/openid-connect-core-1_0.html#NonceNotes) for more informations
+      callbacks:
+        success:
+          "{$request.query.redirect_uri}":
+            get:
+              parameters:
+                - in: query
+                  name: code
+                  description: |
+                    A code that can be used to retrieve a token.
+
+                    If the response_type was `code`, it is returned in a query parameter.
+                    If any of the `id_token` or `token` response_type is used, it is returned in the url fragment.
+                  schema:
+                    type: string
+                - in: query
+                  name: access_token
+                  description: |
+                    An access_token that can be used to access the API.
+
+                    Returned in the url fragment if the `token` response_type was requested.
+                  schema:
+                    type: string
+                - in: query
+                  name: id_token
+                  description: |
+                    An id_token following the [OIDC specification](https://openid.net/specs/openid-connect-core-1_0.html#IDToken).
+
+                    Returned in the url fragment if the `id_token` response_type was requested.
+                  schema:
+                    type: string
+                - in: query
+                  name: token_type
+                  description: |
+                    The type of access token returned. Returned in the url fragment if the `token` response_type was requested.
+
+                    The API will only return Bearer tokens.
+                  schema:
+                    type: string
+                    enum:
+                      - bearer
+                - in: query
+                  name: expires_in
+                  description: |
+                    Lifetime in seconds of the access token.
+
+                    Returned in the url fragment if the `token` response_type was requested.
+                  schema:
+                    type: integer
+                    format: uint32
+                - in: query
+                  name: scope
+                  description: |
+                    The scope of the access token.
+
+                    Returned in the url fragment if the `token` response_type was requested.
+                  schema:
+                    type: integer
+                    format: uint32
+                - in: query
+                  name: state
+                  description: |
+                    REQUIRED if the "state" parameter was present in the client
+                    authorization request.  The exact value received from the
+                    client.
+
+                    Returned in the fragment component of the redirect uri.
+                  schema:
+                    type: string
+              responses:
+                '200':
+                  description: The client accepted the callback
+        error:
+          "{$request.query.redirect_uri}":
+            get:
+              parameters:
+                - in: query
+                  name: error
+                  description: Returned in the fragment component of the redirect uri.
+                  required: true
+                  schema:
+                    $ref: "#/components/schemas/OAuthError"
+                - in: query
+                  name: error_description
+                  description: Additional information to assist the client developper. Returned in the fragment component of the redirect uri.
+                  schema:
+                    $ref: "#/components/schemas/OAuthError"
+                - in: query
+                  name: state
+                  description: |
+                    REQUIRED if the "state" parameter was present in the client
+                    authorization request.  The exact value received from the
+                    client. 
+                    
+                    Returned in the fragment component of the redirect uri.
+                  schema:
+                    type: string
+              responses:
+                '200':
+                  description: The client accepted the callback
+      responses:
+        "302":
+          description: |
+            Redirect to the login page if authentication is required.
+            The login page should redirect back to the oauth endpoint after successfull authentication.
+        "200":
+          description: Displays the OAuth consent page to the end user
+
 components:
+  schemas:
+    # OAuth
+    OIDCResponseType:
+      description: |
+        OpenID Connect `response_type`
+      type: string
+      enum:
+        - none
+        - code
+        - token
+        - id_token
+      x-enum-varnames:
+        - OIDCNoneResponseType
+        - OIDCCodeResponseType
+        - OIDCTokenResponseType
+        - OIDCIdTokenResponseType
+      example: "code"
+    OAuthScope:
+      type: string
+      enum:
+        - openid
+    OAuthError:
+      type: string
+      enum:
+        - invalid_request
+        - unauthorized_client
+        - access_denied
+        - unsupported_response_type
+        - invalid_scope
+        - server_error
+        - temporarily_unavailable
+
   securitySchemes:
     googlauth:
       type: apiKey

@@ -16,14 +16,74 @@ import (
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
+	"github.com/oapi-codegen/runtime"
 	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
 )
+
+// Defines values for OAuthError.
+const (
+	AccessDenied            OAuthError = "access_denied"
+	InvalidRequest          OAuthError = "invalid_request"
+	InvalidScope            OAuthError = "invalid_scope"
+	ServerError             OAuthError = "server_error"
+	TemporarilyUnavailable  OAuthError = "temporarily_unavailable"
+	UnauthorizedClient      OAuthError = "unauthorized_client"
+	UnsupportedResponseType OAuthError = "unsupported_response_type"
+)
+
+// Defines values for OAuthScope.
+const (
+	Openid OAuthScope = "openid"
+)
+
+// Defines values for OIDCResponseType.
+const (
+	OIDCCodeResponseType    OIDCResponseType = "code"
+	OIDCIdTokenResponseType OIDCResponseType = "id_token"
+	OIDCNoneResponseType    OIDCResponseType = "none"
+	OIDCTokenResponseType   OIDCResponseType = "token"
+)
+
+// OAuthError defines model for OAuthError.
+type OAuthError string
+
+// OAuthScope defines model for OAuthScope.
+type OAuthScope string
+
+// OIDCResponseType OpenID Connect `response_type`
+type OIDCResponseType string
+
+// StartAuthorizationFlowParams defines parameters for StartAuthorizationFlow.
+type StartAuthorizationFlowParams struct {
+	// ResponseType Type(s) of oauth response expected, comma-separated. `none` cannot be used with other response types.
+	//
+	// See [specification](https://openid.net/specs/oauth-v2-multiple-response-types-1_0.html#Combinations) for allowed combinations.
+	ResponseType []OIDCResponseType `form:"response_type" json:"response_type" bson:"response_type"`
+	ClientId     uint64             `form:"client_id" json:"client_id" bson:"client_id"`
+	RedirectUri  string             `form:"redirect_uri" json:"redirect_uri" bson:"redirect_uri"`
+
+	// Scope Scopes to request to the end user. MUST include the `openid` scope
+	Scope []OAuthScope `form:"scope" json:"scope" bson:"scope"`
+
+	// State Opaque value that will be returned to the redirect URI as a query parameter if present.
+	//
+	// It SHOULD be used to [prevent CSRF attacks](https://datatracker.ietf.org/doc/html/rfc6749#section-10.12)
+	State *string `form:"state,omitempty" json:"state,omitempty" bson:"state"`
+
+	// Nonce Opaque value that will be embeded in the `id_token`, to mitigate replay attacks.
+	//
+	// See [OIDC spec](https://openid.net/specs/openid-connect-core-1_0.html#NonceNotes) for more informations
+	Nonce *string `form:"nonce,omitempty" json:"nonce,omitempty" bson:"nonce"`
+}
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
 	// (GET /health)
 	GetHealth(ctx echo.Context) error
+	// Start an OAuth flow
+	// (GET /oauth/authorize)
+	StartAuthorizationFlow(ctx echo.Context, params StartAuthorizationFlowParams) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -37,6 +97,59 @@ func (w *ServerInterfaceWrapper) GetHealth(ctx echo.Context) error {
 
 	// Invoke the callback with all the unmarshaled arguments
 	err = w.Handler.GetHealth(ctx)
+	return err
+}
+
+// StartAuthorizationFlow converts echo context to params.
+func (w *ServerInterfaceWrapper) StartAuthorizationFlow(ctx echo.Context) error {
+	var err error
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params StartAuthorizationFlowParams
+	// ------------- Required query parameter "response_type" -------------
+
+	err = runtime.BindQueryParameter("form", false, true, "response_type", ctx.QueryParams(), &params.ResponseType)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter response_type: %s", err))
+	}
+
+	// ------------- Required query parameter "client_id" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "client_id", ctx.QueryParams(), &params.ClientId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter client_id: %s", err))
+	}
+
+	// ------------- Required query parameter "redirect_uri" -------------
+
+	err = runtime.BindQueryParameter("form", true, true, "redirect_uri", ctx.QueryParams(), &params.RedirectUri)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter redirect_uri: %s", err))
+	}
+
+	// ------------- Required query parameter "scope" -------------
+
+	err = runtime.BindQueryParameter("form", false, true, "scope", ctx.QueryParams(), &params.Scope)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter scope: %s", err))
+	}
+
+	// ------------- Optional query parameter "state" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "state", ctx.QueryParams(), &params.State)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter state: %s", err))
+	}
+
+	// ------------- Optional query parameter "nonce" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "nonce", ctx.QueryParams(), &params.Nonce)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter nonce: %s", err))
+	}
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.StartAuthorizationFlow(ctx, params)
 	return err
 }
 
@@ -69,6 +182,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	}
 
 	router.GET(baseURL+"/health", wrapper.GetHealth)
+	router.GET(baseURL+"/oauth/authorize", wrapper.StartAuthorizationFlow)
 
 }
 
@@ -87,11 +201,38 @@ func (response GetHealth200Response) VisitGetHealthResponse(w http.ResponseWrite
 	return nil
 }
 
+type StartAuthorizationFlowRequestObject struct {
+	Params StartAuthorizationFlowParams `bson:"params"`
+}
+
+type StartAuthorizationFlowResponseObject interface {
+	VisitStartAuthorizationFlowResponse(w http.ResponseWriter) error
+}
+
+type StartAuthorizationFlow200Response struct {
+}
+
+func (response StartAuthorizationFlow200Response) VisitStartAuthorizationFlowResponse(w http.ResponseWriter) error {
+	w.WriteHeader(200)
+	return nil
+}
+
+type StartAuthorizationFlow302Response struct {
+}
+
+func (response StartAuthorizationFlow302Response) VisitStartAuthorizationFlowResponse(w http.ResponseWriter) error {
+	w.WriteHeader(302)
+	return nil
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
 	// (GET /health)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
+	// Start an OAuth flow
+	// (GET /oauth/authorize)
+	StartAuthorizationFlow(ctx context.Context, request StartAuthorizationFlowRequestObject) (StartAuthorizationFlowResponseObject, error)
 }
 
 type StrictHandlerFunc = strictecho.StrictEchoHandlerFunc
@@ -129,14 +270,65 @@ func (sh *strictHandler) GetHealth(ctx echo.Context) error {
 	return nil
 }
 
+// StartAuthorizationFlow operation middleware
+func (sh *strictHandler) StartAuthorizationFlow(ctx echo.Context, params StartAuthorizationFlowParams) error {
+	var request StartAuthorizationFlowRequestObject
+
+	request.Params = params
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.StartAuthorizationFlow(ctx.Request().Context(), request.(StartAuthorizationFlowRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "StartAuthorizationFlow")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(StartAuthorizationFlowResponseObject); ok {
+		return validResponse.VisitStartAuthorizationFlowResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/1yQsW4rIRBFf8W6NQ94cWPRWZGVuEicwl2UAuGxFwkPCMZpVvvv0cQpotDMLThw7szI",
-	"fK4IM0pOxIM0crwSAl72RxjcekHAJNJGcK424lFvPZGt/eJ+IHfN4rAYSJai6KERb9/2q3+rx91x97ra",
-	"plRvLAMGn9RHrowAb/9br5Q+GltGwNp6u4ZBizINVXETxSKTxguJjtqoR8mV9ycEPJE8328YdBqt8qBv",
-	"8MF7HScaqecm9x9V6cAlM2HRYzCoqxDC+/yraXCu1BTLVIeEjd+o5fxnE/FeySYSYnvuThssH8tXAAAA",
-	"//91vRO5UgEAAA==",
+	"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",
+	"IQuSNTeCAV6f7Ahse7P9TwAAAP//JbkbIvwWAAA=",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

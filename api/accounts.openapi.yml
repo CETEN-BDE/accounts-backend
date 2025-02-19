@@ -11,9 +11,17 @@ servers:
 tags:
   - name: oauth
     description: Anything related to OAuth
+
+# Most endpoints are only accessible to authenticated users or third-party
+# applications with an oauth token (without a specific field)
+security:
+  - session: []
+  - oauthToken: []
+
 paths:
   /health:
     get:
+      security: []  # Publicly accessible
       responses:
         "200":
           description: "API Online"
@@ -28,6 +36,8 @@ paths:
         This will prompt the end user to login if he is not authenticated.
       tags:
         - oauth
+      security:
+        - session: []  # Only accessible to end users
       parameters:
         - in: query
           name: response_type
@@ -194,6 +204,8 @@ paths:
       operationId: issueOauthToken
       tags:
         - oauth
+      security:
+        - oauthClient: []
       requestBody:
         content:
           application/x-www-form-urlencoded:
@@ -253,6 +265,7 @@ paths:
                     description: The scope of the access token. REQUIRED if its different from the one requested.
                     items:
                       $ref: "#/components/schemas/OAuthScope"
+
 components:
   schemas:
     # OAuth
@@ -342,14 +355,17 @@ components:
       type: string
       enum:
         - Bearer
-
   securitySchemes:
-    googlauth:
+    session:
       type: apiKey
       in: cookie
       name: ACCT_SESS
-      description: Authenticated with Google OAuth, can complete OAuth flows
-    oauth:
+      description: Authenticated end user with Google OAuth or username/password, can complete OAuth flows
+    oauthToken:
       type: openIdConnect
       openIdConnectUrl: /.well-known/openid-configuration
       description: OAuth tokens granted to other applications
+    oauthClient:
+      type: http
+      scheme: basic
+      description: OAuth Client authentication, as defined in [RFC6749#section-2.3.1](https://datatracker.ietf.org/doc/html/rfc6749#section-2.3.1)

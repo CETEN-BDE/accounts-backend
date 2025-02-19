@@ -97,7 +97,7 @@ paths:
                     If the response_type was `code`, it is returned in a query parameter.
                     If any of the `id_token` or `token` response_type is used, it is returned in the url fragment.
                   schema:
-                    type: string
+                    $ref: "#/components/schemas/OAuthAuthorizationCode"
                 - in: query
                   name: access_token
                   description: |
@@ -121,9 +121,7 @@ paths:
 
                     The API will only return Bearer tokens.
                   schema:
-                    type: string
-                    enum:
-                      - bearer
+                    $ref: "#/components/schemas/TokenType"
                 - in: query
                   name: expires_in
                   description: |
@@ -164,12 +162,12 @@ paths:
                   description: Returned in the fragment component of the redirect uri.
                   required: true
                   schema:
-                    $ref: "#/components/schemas/OAuthError"
+                    $ref: "#/components/schemas/OAuthAuthorizationErrorCode"
                 - in: query
                   name: error_description
                   description: Additional information to assist the client developper. Returned in the fragment component of the redirect uri.
                   schema:
-                    $ref: "#/components/schemas/OAuthError"
+                    type: string
                 - in: query
                   name: state
                   description: |
@@ -190,7 +188,71 @@ paths:
             The login page should redirect back to the oauth endpoint after successfull authentication.
         "200":
           description: Displays the OAuth consent page to the end user
-
+  /oauth/token:
+    post:
+      summary: OAuth token endpoint
+      operationId: issueOauthToken
+      tags:
+        - oauth
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              oneOf:
+                - $ref: "#/components/schemas/OAuthAuthorizationCodeTokenRequest"
+                - $ref: "#/components/schemas/OAuthClientCredentialTokenRequest"
+      responses:
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    $ref: "#/components/schemas/OAuthTokenEndpointErrorCode"
+                  error_description:
+                    type: string
+                    description: Human-readable text that provides more information about the error
+                required:
+                  - error
+        "401":
+          description: Client authentication failed. Only with `invalid_client` error code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    $ref: "#/components/schemas/OAuthTokenEndpointErrorCode"
+                  error_description:
+                    type: string
+                    description: Human-readable text that provides more information about the error
+                required:
+                  - error
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    $ref: "#/components/schemas/OAuthAccessToken"
+                  token_type:
+                    $ref: "#/components/schemas/TokenType"
+                  expires_in:
+                    type: integer
+                    format: uint32
+                    description: Lifetime in seconds of the access token
+                    example: 3600
+                  refresh_token:
+                    $ref: "#/components/schemas/OAuthRefreshToken"
+                  scope:
+                    type: array
+                    description: The scope of the access token. REQUIRED if its different from the one requested.
+                    items:
+                      $ref: "#/components/schemas/OAuthScope"
 components:
   schemas:
     # OAuth
@@ -213,8 +275,16 @@ components:
       type: string
       enum:
         - openid
-    OAuthError:
+    OAuthAuthorizationCode:
+      description: Authorization code that can be used to retrieve tokens
       type: string
+    OAuthAccessToken:
+      type: string
+    OAuthRefreshToken:
+      type: string
+    OAuthAuthorizationErrorCode:
+      type: string
+      description: Authorization endpoint error code as defined in section 4.1.2.1 of [RFC6749](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1)
       enum:
         - invalid_request
         - unauthorized_client
@@ -223,6 +293,55 @@ components:
         - invalid_scope
         - server_error
         - temporarily_unavailable
+    OAuthTokenEndpointErrorCode:
+      type: string
+      description: Token endpoint error code as defined in section 5.2 of [RFC6749](https://datatracker.ietf.org/doc/html/rfc6749#section-5.2)
+      enum:
+        - invalid_request
+        - invalid_client
+        - invalid_grant
+        - unauthorized_client
+        - unsupported_grant_type
+        - invalid_scope
+    OAuthAuthorizationCodeTokenRequest:
+      description: Request an access token with an authorization code ([spec](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3))*
+      type: object
+      properties:
+        grant_type:
+          type: string
+          enum:
+            - authorization_code
+        code:
+          description: The authorization code received from the server
+          $ref: "#/components/schemas/OAuthAuthorizationCode"
+        redirect_uri:
+          type: string
+          format: url
+          description: The callback URI that was used for the authorization request
+          example: "http://localhost:8080/callback"
+      required:
+        - grant_type
+        - code
+        - redirect_uri
+    OAuthClientCredentialTokenRequest:
+      description: Request an access token using client credentials *([spec](https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.2))*
+      type: object
+      properties:
+        grant_type:
+          type: string
+          enum:
+            - authorization_code
+        scope:
+          type: array
+          items:
+            $ref: "#/components/schemas/OAuthScope"
+      required:
+        - grant_type
+    TokenType:
+      description: Type of token to use for authentication. Currently, only "Bearer" is supported.
+      type: string
+      enum:
+        - Bearer
 
   securitySchemes:
     googlauth:

@@ -8,6 +8,7 @@ import (
 	"compress/gzip"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -20,20 +21,40 @@ import (
 	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
 )
 
-// Defines values for OAuthError.
+// Defines values for OAuthAuthorizationCodeTokenRequestGrantType.
 const (
-	AccessDenied            OAuthError = "access_denied"
-	InvalidRequest          OAuthError = "invalid_request"
-	InvalidScope            OAuthError = "invalid_scope"
-	ServerError             OAuthError = "server_error"
-	TemporarilyUnavailable  OAuthError = "temporarily_unavailable"
-	UnauthorizedClient      OAuthError = "unauthorized_client"
-	UnsupportedResponseType OAuthError = "unsupported_response_type"
+	OAuthAuthorizationCodeTokenRequestGrantTypeAuthorizationCode OAuthAuthorizationCodeTokenRequestGrantType = "authorization_code"
+)
+
+// Defines values for OAuthAuthorizationErrorCode.
+const (
+	OAuthAuthorizationErrorCodeAccessDenied            OAuthAuthorizationErrorCode = "access_denied"
+	OAuthAuthorizationErrorCodeInvalidRequest          OAuthAuthorizationErrorCode = "invalid_request"
+	OAuthAuthorizationErrorCodeInvalidScope            OAuthAuthorizationErrorCode = "invalid_scope"
+	OAuthAuthorizationErrorCodeServerError             OAuthAuthorizationErrorCode = "server_error"
+	OAuthAuthorizationErrorCodeTemporarilyUnavailable  OAuthAuthorizationErrorCode = "temporarily_unavailable"
+	OAuthAuthorizationErrorCodeUnauthorizedClient      OAuthAuthorizationErrorCode = "unauthorized_client"
+	OAuthAuthorizationErrorCodeUnsupportedResponseType OAuthAuthorizationErrorCode = "unsupported_response_type"
+)
+
+// Defines values for OAuthClientCredentialTokenRequestGrantType.
+const (
+	OAuthClientCredentialTokenRequestGrantTypeAuthorizationCode OAuthClientCredentialTokenRequestGrantType = "authorization_code"
 )
 
 // Defines values for OAuthScope.
 const (
 	Openid OAuthScope = "openid"
+)
+
+// Defines values for OAuthTokenEndpointErrorCode.
+const (
+	OAuthTokenEndpointErrorCodeInvalidClient        OAuthTokenEndpointErrorCode = "invalid_client"
+	OAuthTokenEndpointErrorCodeInvalidGrant         OAuthTokenEndpointErrorCode = "invalid_grant"
+	OAuthTokenEndpointErrorCodeInvalidRequest       OAuthTokenEndpointErrorCode = "invalid_request"
+	OAuthTokenEndpointErrorCodeInvalidScope         OAuthTokenEndpointErrorCode = "invalid_scope"
+	OAuthTokenEndpointErrorCodeUnauthorizedClient   OAuthTokenEndpointErrorCode = "unauthorized_client"
+	OAuthTokenEndpointErrorCodeUnsupportedGrantType OAuthTokenEndpointErrorCode = "unsupported_grant_type"
 )
 
 // Defines values for OIDCResponseType.
@@ -44,14 +65,56 @@ const (
 	OIDCTokenResponseType   OIDCResponseType = "token"
 )
 
-// OAuthError defines model for OAuthError.
-type OAuthError string
+// Defines values for TokenType.
+const (
+	Bearer TokenType = "Bearer"
+)
+
+// OAuthAccessToken defines model for OAuthAccessToken.
+type OAuthAccessToken = string
+
+// OAuthAuthorizationCode Authorization code that can be used to retrieve tokens
+type OAuthAuthorizationCode = string
+
+// OAuthAuthorizationCodeTokenRequest Request an access token with an authorization code ([spec](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.3))*
+type OAuthAuthorizationCodeTokenRequest struct {
+	// Code Authorization code that can be used to retrieve tokens
+	Code      OAuthAuthorizationCode                      `json:"code" bson:"code"`
+	GrantType OAuthAuthorizationCodeTokenRequestGrantType `json:"grant_type" bson:"grant_type"`
+
+	// RedirectUri The callback URI that was used for the authorization request
+	RedirectUri string `json:"redirect_uri" bson:"redirect_uri"`
+}
+
+// OAuthAuthorizationCodeTokenRequestGrantType defines model for OAuthAuthorizationCodeTokenRequest.GrantType.
+type OAuthAuthorizationCodeTokenRequestGrantType string
+
+// OAuthAuthorizationErrorCode Authorization endpoint error code as defined in section 4.1.2.1 of [RFC6749](https://datatracker.ietf.org/doc/html/rfc6749#section-4.1.2.1)
+type OAuthAuthorizationErrorCode string
+
+// OAuthClientCredentialTokenRequest Request an access token using client credentials *([spec](https://datatracker.ietf.org/doc/html/rfc6749#section-4.4.2))*
+type OAuthClientCredentialTokenRequest struct {
+	GrantType OAuthClientCredentialTokenRequestGrantType `json:"grant_type" bson:"grant_type"`
+	Scope     *[]OAuthScope                              `json:"scope,omitempty" bson:"scope"`
+}
+
+// OAuthClientCredentialTokenRequestGrantType defines model for OAuthClientCredentialTokenRequest.GrantType.
+type OAuthClientCredentialTokenRequestGrantType string
+
+// OAuthRefreshToken defines model for OAuthRefreshToken.
+type OAuthRefreshToken = string
 
 // OAuthScope defines model for OAuthScope.
 type OAuthScope string
 
+// OAuthTokenEndpointErrorCode Token endpoint error code as defined in section 5.2 of [RFC6749](https://datatracker.ietf.org/doc/html/rfc6749#section-5.2)
+type OAuthTokenEndpointErrorCode string
+
 // OIDCResponseType OpenID Connect `response_type`
 type OIDCResponseType string
+
+// TokenType Type of token to use for authentication. Currently, only "Bearer" is supported.
+type TokenType string
 
 // StartAuthorizationFlowParams defines parameters for StartAuthorizationFlow.
 type StartAuthorizationFlowParams struct {
@@ -76,6 +139,14 @@ type StartAuthorizationFlowParams struct {
 	Nonce *string `form:"nonce,omitempty" json:"nonce,omitempty" bson:"nonce"`
 }
 
+// IssueOauthTokenFormdataBody defines parameters for IssueOauthToken.
+type IssueOauthTokenFormdataBody struct {
+	union json.RawMessage `bson:"union"`
+}
+
+// IssueOauthTokenFormdataRequestBody defines body for IssueOauthToken for application/x-www-form-urlencoded ContentType.
+type IssueOauthTokenFormdataRequestBody IssueOauthTokenFormdataBody
+
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
@@ -84,6 +155,9 @@ type ServerInterface interface {
 	// Start an OAuth flow
 	// (GET /oauth/authorize)
 	StartAuthorizationFlow(ctx echo.Context, params StartAuthorizationFlowParams) error
+	// OAuth token endpoint
+	// (POST /oauth/token)
+	IssueOauthToken(ctx echo.Context) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -153,6 +227,15 @@ func (w *ServerInterfaceWrapper) StartAuthorizationFlow(ctx echo.Context) error 
 	return err
 }
 
+// IssueOauthToken converts echo context to params.
+func (w *ServerInterfaceWrapper) IssueOauthToken(ctx echo.Context) error {
+	var err error
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.IssueOauthToken(ctx)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -183,6 +266,7 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.GET(baseURL+"/health", wrapper.GetHealth)
 	router.GET(baseURL+"/oauth/authorize", wrapper.StartAuthorizationFlow)
+	router.POST(baseURL+"/oauth/token", wrapper.IssueOauthToken)
 
 }
 
@@ -225,6 +309,65 @@ func (response StartAuthorizationFlow302Response) VisitStartAuthorizationFlowRes
 	return nil
 }
 
+type IssueOauthTokenRequestObject struct {
+	Body *IssueOauthTokenFormdataRequestBody `bson:"body"`
+}
+
+type IssueOauthTokenResponseObject interface {
+	VisitIssueOauthTokenResponse(w http.ResponseWriter) error
+}
+
+type IssueOauthToken200JSONResponse struct {
+	AccessToken *OAuthAccessToken `json:"access_token,omitempty" bson:"access_token"`
+
+	// ExpiresIn Lifetime in seconds of the access token
+	ExpiresIn    *uint32            `json:"expires_in,omitempty" bson:"expires_in"`
+	RefreshToken *OAuthRefreshToken `json:"refresh_token,omitempty" bson:"refresh_token"`
+
+	// Scope The scope of the access token. REQUIRED if its different from the one requested.
+	Scope *[]OAuthScope `json:"scope,omitempty" bson:"scope"`
+
+	// TokenType Type of token to use for authentication. Currently, only "Bearer" is supported.
+	TokenType *TokenType `json:"token_type,omitempty" bson:"token_type"`
+}
+
+func (response IssueOauthToken200JSONResponse) VisitIssueOauthTokenResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type IssueOauthToken400JSONResponse struct {
+	// Error Token endpoint error code as defined in section 5.2 of [RFC6749](https://datatracker.ietf.org/doc/html/rfc6749#section-5.2)
+	Error OAuthTokenEndpointErrorCode `json:"error" bson:"error"`
+
+	// ErrorDescription Human-readable text that provides more information about the error
+	ErrorDescription *string `json:"error_description,omitempty" bson:"error_description"`
+}
+
+func (response IssueOauthToken400JSONResponse) VisitIssueOauthTokenResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type IssueOauthToken401JSONResponse struct {
+	// Error Token endpoint error code as defined in section 5.2 of [RFC6749](https://datatracker.ietf.org/doc/html/rfc6749#section-5.2)
+	Error OAuthTokenEndpointErrorCode `json:"error" bson:"error"`
+
+	// ErrorDescription Human-readable text that provides more information about the error
+	ErrorDescription *string `json:"error_description,omitempty" bson:"error_description"`
+}
+
+func (response IssueOauthToken401JSONResponse) VisitIssueOauthTokenResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
@@ -233,6 +376,9 @@ type StrictServerInterface interface {
 	// Start an OAuth flow
 	// (GET /oauth/authorize)
 	StartAuthorizationFlow(ctx context.Context, request StartAuthorizationFlowRequestObject) (StartAuthorizationFlowResponseObject, error)
+	// OAuth token endpoint
+	// (POST /oauth/token)
+	IssueOauthToken(ctx context.Context, request IssueOauthTokenRequestObject) (IssueOauthTokenResponseObject, error)
 }
 
 type StrictHandlerFunc = strictecho.StrictEchoHandlerFunc
@@ -295,40 +441,83 @@ func (sh *strictHandler) StartAuthorizationFlow(ctx echo.Context, params StartAu
 	return nil
 }
 
+// IssueOauthToken operation middleware
+func (sh *strictHandler) IssueOauthToken(ctx echo.Context) error {
+	var request IssueOauthTokenRequestObject
+
+	if form, err := ctx.FormParams(); err == nil {
+		var body IssueOauthTokenFormdataRequestBody
+		if err := runtime.BindForm(&body, form, nil, nil); err != nil {
+			return err
+		}
+		request.Body = &body
+	} else {
+		return err
+	}
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.IssueOauthToken(ctx.Request().Context(), request.(IssueOauthTokenRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "IssueOauthToken")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(IssueOauthTokenResponseObject); ok {
+		return validResponse.VisitIssueOauthTokenResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
-	"IQuSNTeCAV6f7Ahse7P9TwAAAP//JbkbIvwWAAA=",
+	"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",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

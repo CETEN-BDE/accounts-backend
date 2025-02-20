@@ -57,15 +57,13 @@ paths:
           name: client_id
           required: true
           schema:
-            type: integer
-            format: uint64
-            example: 12345678
+            $ref: "#/components/schemas/OAuthClientId"
         - in: query
           name: redirect_uri
           required: true
           schema:
             type: string
-            format: url
+            format: uri
             example: "http://localhost:8080/callback"
         - in: query
           name: scope
@@ -210,6 +208,7 @@ paths:
         content:
           application/x-www-form-urlencoded:
             schema:
+              # TODO: Use discriminator
               oneOf:
                 - $ref: "#/components/schemas/OAuthAuthorizationCodeTokenRequest"
                 - $ref: "#/components/schemas/OAuthClientCredentialTokenRequest"
@@ -268,7 +267,10 @@ paths:
 
 components:
   schemas:
-    # OAuth
+
+    ###########
+    #  OAuth  #
+    ###########
     OIDCResponseType:
       description: |
         OpenID Connect `response_type`
@@ -284,10 +286,6 @@ components:
         - OIDCTokenResponseType
         - OIDCIdTokenResponseType
       example: "code"
-    OAuthScope:
-      type: string
-      enum:
-        - openid
     OAuthAuthorizationCode:
       description: Authorization code that can be used to retrieve tokens
       type: string
@@ -329,7 +327,7 @@ components:
           $ref: "#/components/schemas/OAuthAuthorizationCode"
         redirect_uri:
           type: string
-          format: url
+          format: uri
           description: The callback URI that was used for the authorization request
           example: "http://localhost:8080/callback"
       required:
@@ -368,11 +366,365 @@ components:
       required:
         - grant_type
         - refresh_token
+    OAuthClientId:
+      type: integer
+      format: uint64
+      example: 123456
     TokenType:
       description: Type of token to use for authentication. Currently, only "Bearer" is supported.
       type: string
       enum:
         - Bearer
+    OIDCIdToken:
+      description: ID Token as defined in the [OIDC spec](https://openid.net/specs/openid-connect-core-1_0.html#IDToken)
+      type: object
+      properties:
+        iss:
+          description: Issuer Identifier for the Issuer of the response
+          type: string
+          format: uri
+          example: "https://account.ceten.fr/"
+        sub:
+          description: Subject Identifier. A locally unique and never reassigned identifier for the End-User, which is intended to be consumed by the Client.
+          type: string
+          maxLength: 255
+        aud:
+          $ref: "#/components/schemas/OAuthClientId"
+          description: Audience(s) that this ID Token is intended for
+        exp:
+          description: Expiration time (timestamp) on or after which the ID Token MUST NOT be accepted
+          type: integer
+          format: timestamp
+          example: 1056391200
+        iat:
+          description: Time (timestamp) at which the ID token was issued
+          type: integer
+          format: timestamp
+          example: 1056391200
+        auth_time:
+          description: Time when the End-User authentication occurred
+          type: integer
+          format: timestamp
+          example: 1056391200
+        nonce:
+          description: The value is passed through unmodified from the Authentication Request to the ID Token. REQUIRED if a `nonce` was passed in the authentication request
+          type: string
+        claims:
+          $ref: "#/components/schemas/OIDCUserInfo"
+    OIDCUserInfo:
+      type: object
+      description: Provides information about an end user.
+      properties:
+        sub:
+          description: Subject Identifier. A locally unique and never reassigned identifier for the End-User, which is intended to be consumed by the Client.
+          type: string
+          maxLength: 255
+        name:
+          type: string
+          description: End-User's full name in displayable form, including all name parts
+        given_name:
+          type: string
+          description: First name of the End-User
+        family_name:
+          type: string
+          description: Last name of the End-User
+        nickname:
+          type: string
+          description: Casual name of the End-User. Same as `given_name` if not specified.
+        picture:
+          type: string
+          format: uri
+          description: URL of the End-User's profile picture.
+        email:
+          type: string
+          format: email
+          description: End-User's e-mail address.
+        email_verified:
+          type: boolean
+          description: |
+            True if the End-User's e-mail address has been verified; otherwise false. 
+
+            Here, an e-mail address is verified if it was registered via google oauth or manually verified by an administrator.
+        birthdate:
+          type: string
+          description: End-User's birthday, represented as an ISO 8601-1 YYYY-MM-DD format. The year MAY be 0000, indicating that it is omitted.
+        phone_number:
+          type: string
+          description: End-User's preferred telephone number.
+          example: "(+33) 6 12 34 56 78"
+        phone_number_verified:
+          type: boolean
+          description: True if the End-User's phone number has been verified; otherwise false. 
+        updated_at:
+          type: integer
+          format: timestamp
+          description: Time the End-User's information was last updated. (timestamp)
+          example: 1056391200
+        address:
+          $ref: "#/components/schemas/OIDCAddress"
+    OIDCAddress:
+      type: object
+      description: Address claim, as defined in the [OIDC spec](https://openid.net/specs/openid-connect-core-1_0.html#AddressClaim)
+      properties:
+        formatted:
+          type: string
+          description: Full mailing address, formatted for display or use on a mailing label. This field MAY contain multiple lines, separated by newlines. Newlines can be represented either as a carriage return/line feed pair ("\r\n") or as a single line feed character ("\n"). 
+        street_address:
+          type: string
+          description: Full street address component, which MAY include house number, street name, Post Office Box, and multi-line extended street address information. This field MAY contain multiple lines, separated by newlines. Newlines can be represented either as a carriage return/line feed pair ("\r\n") or as a single line feed character ("\n"). 
+        locality:
+          type: string
+          description: City or locality component. 
+        region:
+          type: string
+          description: State, province, prefecture, or region component. 
+        postal_code:
+          type: integer
+          description: Zip code or postal code component. 
+        country:
+          type: string
+          description: Country name component. 
+
+    OAuthScope:
+      type: string
+      description: |
+        Describes the scopes that can be granted using OAuth.
+        
+        Most scopes are read-only by default, and can be appended with `:write` to get write pemission,
+        `:admin_read` to get admin read permission (e.g. read others private information), or `:admin_write`
+        to get admin write permission (e.g. edit other user's information).
+
+        Scopes appended with `:admin_read` or `:admin_write` are usually linked to administrative permissions,
+        and will likely require reauthentication of the end-user, and that the end-user uses advanced authentication
+        features such as 2FA. If the end-user does not have access to the associatd permission, the scope will
+        be ignored for the Authentication Request, and will not be shown in the consent screen.
+
+        Scopes related to club management permissions (e.g. `club_members:write`) will be shown in the consent
+        screen even if the end user does not currently have such permissions. This avoids the need for the client
+        to renew its authorization request if the user was to gain or loose such privileges in the future
+        (e.g. registering to a club management application before being assigned the club roles). Note that club
+        management permissions are checked every time a management request is made, and the server does not take
+        that the presence of the scopes in the access token for a proof tht the end user has the permissions, applications
+        need to handle 403 Forbidden errors on these endpoints accordingly.
+      enum:
+        # OIDC defined scopes
+        - openid
+        - profile
+        - email
+        - address
+        - phone
+
+        # OIDC scopes extension
+        - userinfo:admin_read   # read any user information
+        - userinfo:admin_write  # read and write any user information
+
+        # Clubs
+        - clubs  # See which clubs you are in
+
+        - club_members  # See all members of your clubs
+        - club_members:write  # Manage members (and their roles) of your club
+        - club_members:admin_read  # See all members of any club
+        - club_members:admin_write  # Manage all members of any club
+        - club_roles:write  # Manage clubs custom roles
+        - club_roles:admin_write  # Manage any clubs custom roles
+        - clubs:admin_write  # Manage all clubs. Allow creating and deleting clubs, as well as all club_*:admin_write scopes
+
+    ###################
+    #  Authorization  #
+    ###################
+    GlobalPermission:
+      type: string
+      description: |
+        A global permission that is not club-specific. Mostly admin permissions, that will need
+        reauthentication and 2FA to be granted to oauth clients.
+      enum:
+        - ADMIN  # Grants every permissions and skips authorization checks
+        - MANAGE_CLUBS  # Manage all club-related information (creation, members, BR, roles ...)
+        - MANAGE_USERS_INFO  # Manage user informations
+        - MANAGE_USERS_ROLES  # Manage user roles assignments
+        - MANAGE_ROLES  # Manage roles and their permissions
+    ClubPermission:
+      type: string
+      description: |
+        A club-specific permission. Mostly club management permission, that can be granted to a user for a specific club.
+      enum:
+        - MANAGE_MEMBERS  # Manage club members and their roles (except BR)
+        - MANAGE_ROLES  # Manage club custom roles
+        - MANAGE_PROFILE  # Manage club profile
+    Role:
+      description: Global role that can be used to group permissions
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint64
+          readOnly: true
+        name:
+          type: string
+        default_role:
+          description: True if the role is a default role that cannot be modified.
+          type: boolean
+          default: false
+          readOnly: true
+        permissions:
+          description: List of global permissions granted by this role
+          type: array
+          items:
+            $ref: "#/components/schemas/GlobalPermission"
+    ClubRole:
+      description: Club-specific role that can be used to group club permissions
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint64
+          readOnly: true
+        name:
+          type: string
+        default_role:
+          description: True if the role is a default club role that cannot be modified.
+          type: boolean
+          default: false
+          readOnly: true
+        permissions:
+          description: List of club permissions granted by this role
+          type: array
+          items:
+            $ref: "#/components/schemas/ClubPermission"
+    CustomClubRole:
+      description: Custom club-specific role that can be created by club members with the `MANAGE_ROLES` permission
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint64
+          readOnly: true
+        name:
+          type: string
+        public:
+          type: boolean
+          description: |
+            Specify if club members with this role should be displayed on the public club information page,
+            along with the BR and BE.
+          default: true
+        permissions:
+          description: List of club permissions granted by this role
+          type: array
+          items:
+            $ref: "#/components/schemas/ClubPermission"
+
+    NameAndId:
+      description: Summary of an entity with a name and an id
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint64
+        name:
+          type: string
+      required:
+        - id
+        - name
+
+    ###########
+    #  Users  #
+    ###########
+    UserSummary:
+      description: Summary of a user, with limited information
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint64
+          readOnly: true
+        name:
+          type: string
+          description: Display name of the user
+        given_name:
+          type: string
+          description: First name of the user
+        family_name:
+          type: string
+          description: Last name of the user
+        nickname:
+          type: string
+          description: Casual name of the user.
+        picture:
+          type: string
+          format: uri
+          description: URL of the user's profile picture.
+      required:
+        - id
+        - name
+        - given_name
+        - family_name
+        
+    ###########
+    #  Clubs  #
+    ###########
+    ClubType:
+      description: The type of club
+      type: string
+      enum:
+        - event
+        - hobby
+        - services
+    Club:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: uint64
+          readOnly: true
+        name:
+          type: string
+        type:
+          $ref: "#/components/schemas/ClubType"
+        description:
+          type: string
+          maxLength: 60000
+        mail:
+          type: string
+          format: email
+        president:
+          description: The club's president
+          allOf:
+            - $ref: "#/components/schemas/UserSummary"
+        treasurer:
+          description: The club's treasurer
+          allOf:
+            - $ref: "#/components/schemas/UserSummary"
+        secretary:
+          description: The club's secretary
+          allOf:
+            - $ref: "#/components/schemas/UserSummary"
+    ClubMembership:
+      allOf:
+        - $ref: "#/components/schemas/UserSummary"
+        - type: object
+          properties:
+            since:
+              description: Start date of the membership
+              type: string
+              format: datetime
+            until:
+              description: End date of the membership. Not present when not specified and the membership is still valid
+              type: string
+              format: datetime
+            role:
+              description: Club role assigned to the user
+              allOf:
+                - $ref: "#/components/schemas/NameAndId"
+            custom_roles:
+              description: Custom club roles assigned to the user
+              type: array
+              items:
+                $ref: "#/components/schemas/NameAndId"
+          required:
+            - role
+            - custom_roles
+            - since
+
   securitySchemes:
     session:
       type: apiKey

@@ -10,6 +10,7 @@ tasks:
       - go install github.com/fatih/gomodifytags@latest
   regen:
     cmds:
-      - oapi-codegen -generate="types,server,strict-server,spec" -package autogen api/accounts.openapi.yml > internal/autogen/accounts.gen.go
+      # - oapi-codegen -generate="types,server,strict-server,spec" -package autogen api/accounts.openapi.yml > internal/autogen/accounts.gen.go
+      - oapi-codegen -generate="types,server,strict-server,spec" -config oapi-codegen.yml api/accounts.openapi.yml > internal/autogen/accounts.gen.go
       - go mod tidy
       - gomodifytags -all -file internal/autogen/accounts.gen.go -add-tags bson -w > /dev/null

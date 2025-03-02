@@ -1,0 +1,10 @@
+# Configuration file for oapi-codegen
+package: autogen
+output: internal/autogen/accounts.gen.go
+generate:
+  models: true  
+  embedded-spec: true
+  echo-server: true
+  strict-server: true
+compatibility:
+  always-prefix-enum-values: true

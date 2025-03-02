@@ -11,6 +11,8 @@ servers:
 tags:
   - name: oauth
     description: Anything related to OAuth
+  - name: user
+    description: Generic info about a user
 
 # Most endpoints are only accessible to authenticated users or third-party
 # applications with an oauth token (without a specific field)
@@ -264,10 +266,102 @@ paths:
                     description: The scope of the access token. REQUIRED if its different from the one requested.
                     items:
                       $ref: "#/components/schemas/OAuthScope"
+  
+  # Userinfo endpoint
+  /userinfo:
+    get:
+      summary: Get your own user information
+      operationId: getUserinfo
+      tags:
+        - user
+      security:
+        - session: []
+        - oauthToken: [openid]
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OIDCUserInfo"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    patch:
+      summary: Change user information
+      description: Allows an end-user to change its information. Not accessible with oauth
+      operationId: patchUserInfo
+      tags:
+        - user
+      security:
+        - session: []
+      responses:
+        "204":
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
 
 components:
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: "invalid_token"
+            message: "Expired access token"
+            error_description: "Your access token expired, please login again"
+    Forbidden:
+      description: The user does not have access to this resource
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: "insufficient_permission"
+            message: "Missing MANAGE_CLUBS permission"
+            error_description: "You don't have the permission to do that"
+
   schemas:
 
+    ErrorCode:
+      description: |
+        Error codes
+
+        | Code | Description |
+        |------|-------------|
+        | `internal_error` | Internal server error |
+        | `invalid_request` | Invalid request, missing or invalid parameters |
+        | `invalid_token` | Malformed, expired or revoked token |
+        | `insufficient_scope` | The required scope was not granted to the used token |
+        | `insufficient_permission` | The user does not have the permission to use this endpoint |
+      type: string
+      enum:
+        - internal_error
+        - invalid_request
+        - invalid_token
+        - insufficient_scope
+        - insufficient_permission
+
+    Error:
+      type: object
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        message:
+          type: string
+        error_description:
+          description: Description that can be displayed to the user
+          type: string
+      required:
+        - code
+        - message
+    
     ###########
     #  OAuth  #
     ###########

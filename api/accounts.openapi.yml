@@ -283,7 +283,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/OIDCUserInfo"
+                $ref: "#/components/schemas/UserInfo"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -299,6 +299,264 @@ paths:
       responses:
         "204":
           description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  
+  /user/{user_id}/profile:
+    get:
+      summary: Get public information about a user
+      operationId: getUserProfile
+      tags:
+        - user
+      parameters:
+        - name: user_id
+          in: path
+          schema:
+            type: integer
+          required: true
+
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserSummary"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  /user/{user_id}:
+    get:
+      summary: Get all informations about a user.
+      description: Requires the `MANAGE_USERS_INFO` permission
+      operationId: getUser
+      tags:
+        - user
+      security:
+        - session: []
+        - oauthToken: [userinfo:admin_read]
+      parameters:
+        - name: user_id
+          in: path
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    patch:
+      summary: Modify a user
+      description: Requires the `MANAGE_USERS_INFO` permission
+      operationId: patchUser
+      tags:
+        - user
+      security:
+        - oauthToken: [userinfo:admin_write]
+        - session: []
+      parameters:
+        - name: user_id
+          in: path
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/User"
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  
+  /user/{user_id}/roles:
+    get:
+      summary: Get user roles
+      description: Requires the `MANAGE_USERS_ROLES` permission
+      operationId: getUserRoles
+      tags:
+        - user
+      security:
+        - session: []
+        - oauthToken: [user_roles:admin_read]
+      parameters:
+        - name: user_id
+          in: path
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Role"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Give a role to a user
+      description: Requires the `MANAGE_USERS_ROLES` permission
+      operationId: postUserRole
+      tags:
+        - user
+      security:
+        - session: []
+        - oauthToken: [user_roles:admin_write]
+      parameters:
+        - name: user_id
+          in: path
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: integer
+              format: uint64
+              description: Role id
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Unknown role
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "404":
+          description: Unknown user
+          $ref: "#/components/responses/NotFound"
+          
+    delete:
+      summary: Remove a role from a user
+      description: Requires the `MANAGE_USERS_ROLES` permission
+      operationId: deleteUserRole
+      tags:
+        - user
+      security:
+        - session: []
+        - oauthToken: [user_roles:admin_write]
+      parameters:
+        - name: user_id
+          in: path
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: integer
+              format: uint64
+              description: Role id
+      responses:
+        "204":
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    put:
+      summary: Set the roles of a user
+      description: Requires the `MANAGE_USERS_ROLES` permission
+      operationId: putUserRole
+      tags:
+        - user
+      security:
+        - session: []
+        - oauthToken: [user_roles:admin_write]
+      parameters:
+        - name: user_id
+          in: path
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              description: List of role ids
+              items:
+                type: integer
+                format: uint64
+      responses:
+        "204":
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+  
+  /users:
+    get:
+      summary: Get a list of all users
+      operationId: getUsers
+      tags:
+        - user
+      security:
+        - global_perms: [MANAGE_USERS_INFO]
+        - session: []
+        - oauthToken: [userinfo:admin_read]
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+    post:
+      summary: Create a user
+      operationId: postUsers
+      tags:
+        - user
+      security:
+        - global_perms: [MANAGE_USERS_INFO]
+        - session: []
+        - oauthToken: [userinfo:admin_write]
+      responses:
+        "200":
+          description: Success
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/User"
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":
@@ -326,6 +584,16 @@ components:
             code: "insufficient_permission"
             message: "Missing MANAGE_CLUBS permission"
             error_description: "You don't have the permission to do that"
+    NotFound:
+      description: The requested resource was not found
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            code: "not_found"
+            message: "User not found"
+            error_description: "This user does not exist !"
 
   schemas:
 
@@ -504,8 +772,8 @@ components:
           description: The value is passed through unmodified from the Authentication Request to the ID Token. REQUIRED if a `nonce` was passed in the authentication request
           type: string
         claims:
-          $ref: "#/components/schemas/OIDCUserInfo"
-    OIDCUserInfo:
+          $ref: "#/components/schemas/UserInfo"
+    UserInfo:
       type: object
       description: Provides information about an end user.
       properties:
@@ -611,6 +879,8 @@ components:
         # OIDC scopes extension
         - userinfo:admin_read   # read any user information
         - userinfo:admin_write  # read and write any user information
+        - user_roles:admin_read  # read any user roles
+        - user_roles:admin_write # read and write any user roles
 
         # Clubs
         - clubs  # See which clubs you are in
@@ -751,8 +1021,25 @@ components:
         - id
         - name
         - given_name
-        - family_name
-        
+        - family_name 
+    User:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/UserInfo"
+        - type: object
+          properties:
+            created_at:
+              type: string
+              format: date-time
+              description: Time of creation of the user
+            deleted_at:
+              type: string
+              format: date-time
+              description: Time of deletion of the user
+            hidden:
+              type: boolean
+              description: Is this user hidden (eg an application user)
+    
     ###########
     #  Clubs  #
     ###########

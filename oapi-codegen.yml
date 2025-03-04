@@ -6,5 +6,8 @@ generate:
   embedded-spec: true
   echo-server: true
   strict-server: true
+output-options:
+  user-templates:
+    constants.tmpl: "./tools/oapi-codegen-templates/enum-values.tmpl"
 compatibility:
   always-prefix-enum-values: true

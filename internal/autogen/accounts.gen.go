@@ -14,22 +14,67 @@ import (
 	"net/url"
 	"path"
 	"strings"
+	"time"
 
 	"github.com/getkin/kin-openapi/openapi3"
 	"github.com/labstack/echo/v4"
 	"github.com/oapi-codegen/runtime"
 	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
-	OauthClientScopes = "oauthClient.Scopes"
-	SessionScopes     = "session.Scopes"
+	Global_permsScopes = "global_perms.Scopes"
+	OauthClientScopes  = "oauthClient.Scopes"
+	OauthTokenScopes   = "oauthToken.Scopes"
+	SessionScopes      = "session.Scopes"
 )
+
+// Defines values for ErrorCode.
+const (
+	ErrorCodeInsufficientPermission ErrorCode = "insufficient_permission"
+	ErrorCodeInsufficientScope      ErrorCode = "insufficient_scope"
+	ErrorCodeInternalError          ErrorCode = "internal_error"
+	ErrorCodeInvalidRequest         ErrorCode = "invalid_request"
+	ErrorCodeInvalidToken           ErrorCode = "invalid_token"
+)
+
+// Stores all values of ErrorCode enum.
+var ErrorCode_values = [...]ErrorCode{
+	ErrorCodeInsufficientPermission,
+	ErrorCodeInsufficientScope,
+	ErrorCodeInternalError,
+	ErrorCodeInvalidRequest,
+	ErrorCodeInvalidToken,
+}
+
+// Defines values for GlobalPermission.
+const (
+	GlobalPermissionADMIN            GlobalPermission = "ADMIN"
+	GlobalPermissionMANAGECLUBS      GlobalPermission = "MANAGE_CLUBS"
+	GlobalPermissionMANAGEROLES      GlobalPermission = "MANAGE_ROLES"
+	GlobalPermissionMANAGEUSERSINFO  GlobalPermission = "MANAGE_USERS_INFO"
+	GlobalPermissionMANAGEUSERSROLES GlobalPermission = "MANAGE_USERS_ROLES"
+)
+
+// Stores all values of GlobalPermission enum.
+var GlobalPermission_values = [...]GlobalPermission{
+	GlobalPermissionADMIN,
+	GlobalPermissionMANAGECLUBS,
+	GlobalPermissionMANAGEROLES,
+	GlobalPermissionMANAGEUSERSINFO,
+	GlobalPermissionMANAGEUSERSROLES,
+}
 
 // Defines values for OAuthAuthorizationCodeTokenRequestGrantType.
 const (
 	OAuthAuthorizationCodeTokenRequestGrantTypeAuthorizationCode OAuthAuthorizationCodeTokenRequestGrantType = "authorization_code"
 )
+
+// Stores all values of OAuthAuthorizationCodeTokenRequestGrantType enum.
+var OAuthAuthorizationCodeTokenRequestGrantType_values = [...]OAuthAuthorizationCodeTokenRequestGrantType{
+	OAuthAuthorizationCodeTokenRequestGrantTypeAuthorizationCode,
+}
 
 // Defines values for OAuthAuthorizationErrorCode.
 const (
@@ -42,29 +87,68 @@ const (
 	OAuthAuthorizationErrorCodeUnsupportedResponseType OAuthAuthorizationErrorCode = "unsupported_response_type"
 )
 
+// Stores all values of OAuthAuthorizationErrorCode enum.
+var OAuthAuthorizationErrorCode_values = [...]OAuthAuthorizationErrorCode{
+	OAuthAuthorizationErrorCodeAccessDenied,
+	OAuthAuthorizationErrorCodeInvalidRequest,
+	OAuthAuthorizationErrorCodeInvalidScope,
+	OAuthAuthorizationErrorCodeServerError,
+	OAuthAuthorizationErrorCodeTemporarilyUnavailable,
+	OAuthAuthorizationErrorCodeUnauthorizedClient,
+	OAuthAuthorizationErrorCodeUnsupportedResponseType,
+}
+
 // Defines values for OAuthClientCredentialTokenRequestGrantType.
 const (
 	OAuthClientCredentialTokenRequestGrantTypeAuthorizationCode OAuthClientCredentialTokenRequestGrantType = "authorization_code"
 )
 
+// Stores all values of OAuthClientCredentialTokenRequestGrantType enum.
+var OAuthClientCredentialTokenRequestGrantType_values = [...]OAuthClientCredentialTokenRequestGrantType{
+	OAuthClientCredentialTokenRequestGrantTypeAuthorizationCode,
+}
+
 // Defines values for OAuthScope.
 const (
-	Address               OAuthScope = "address"
-	ClubMembers           OAuthScope = "club_members"
-	ClubMembersAdminRead  OAuthScope = "club_members:admin_read"
-	ClubMembersAdminWrite OAuthScope = "club_members:admin_write"
-	ClubMembersWrite      OAuthScope = "club_members:write"
-	ClubRolesAdminWrite   OAuthScope = "club_roles:admin_write"
-	ClubRolesWrite        OAuthScope = "club_roles:write"
-	Clubs                 OAuthScope = "clubs"
-	ClubsAdminWrite       OAuthScope = "clubs:admin_write"
-	Email                 OAuthScope = "email"
-	Openid                OAuthScope = "openid"
-	Phone                 OAuthScope = "phone"
-	Profile               OAuthScope = "profile"
-	UserinfoAdminRead     OAuthScope = "userinfo:admin_read"
-	UserinfoAdminWrite    OAuthScope = "userinfo:admin_write"
+	OAuthScopeAddress               OAuthScope = "address"
+	OAuthScopeClubMembers           OAuthScope = "club_members"
+	OAuthScopeClubMembersAdminRead  OAuthScope = "club_members:admin_read"
+	OAuthScopeClubMembersAdminWrite OAuthScope = "club_members:admin_write"
+	OAuthScopeClubMembersWrite      OAuthScope = "club_members:write"
+	OAuthScopeClubRolesAdminWrite   OAuthScope = "club_roles:admin_write"
+	OAuthScopeClubRolesWrite        OAuthScope = "club_roles:write"
+	OAuthScopeClubs                 OAuthScope = "clubs"
+	OAuthScopeClubsAdminWrite       OAuthScope = "clubs:admin_write"
+	OAuthScopeEmail                 OAuthScope = "email"
+	OAuthScopeOpenid                OAuthScope = "openid"
+	OAuthScopePhone                 OAuthScope = "phone"
+	OAuthScopeProfile               OAuthScope = "profile"
+	OAuthScopeUserRolesAdminRead    OAuthScope = "user_roles:admin_read"
+	OAuthScopeUserRolesAdminWrite   OAuthScope = "user_roles:admin_write"
+	OAuthScopeUserinfoAdminRead     OAuthScope = "userinfo:admin_read"
+	OAuthScopeUserinfoAdminWrite    OAuthScope = "userinfo:admin_write"
 )
+
+// Stores all values of OAuthScope enum.
+var OAuthScope_values = [...]OAuthScope{
+	OAuthScopeAddress,
+	OAuthScopeClubMembers,
+	OAuthScopeClubMembersAdminRead,
+	OAuthScopeClubMembersAdminWrite,
+	OAuthScopeClubMembersWrite,
+	OAuthScopeClubRolesAdminWrite,
+	OAuthScopeClubRolesWrite,
+	OAuthScopeClubs,
+	OAuthScopeClubsAdminWrite,
+	OAuthScopeEmail,
+	OAuthScopeOpenid,
+	OAuthScopePhone,
+	OAuthScopeProfile,
+	OAuthScopeUserRolesAdminRead,
+	OAuthScopeUserRolesAdminWrite,
+	OAuthScopeUserinfoAdminRead,
+	OAuthScopeUserinfoAdminWrite,
+}
 
 // Defines values for OAuthTokenEndpointErrorCode.
 const (
@@ -76,18 +160,74 @@ const (
 	OAuthTokenEndpointErrorCodeUnsupportedGrantType OAuthTokenEndpointErrorCode = "unsupported_grant_type"
 )
 
+// Stores all values of OAuthTokenEndpointErrorCode enum.
+var OAuthTokenEndpointErrorCode_values = [...]OAuthTokenEndpointErrorCode{
+	OAuthTokenEndpointErrorCodeInvalidClient,
+	OAuthTokenEndpointErrorCodeInvalidGrant,
+	OAuthTokenEndpointErrorCodeInvalidRequest,
+	OAuthTokenEndpointErrorCodeInvalidScope,
+	OAuthTokenEndpointErrorCodeUnauthorizedClient,
+	OAuthTokenEndpointErrorCodeUnsupportedGrantType,
+}
+
 // Defines values for OIDCResponseType.
 const (
-	OIDCCodeResponseType    OIDCResponseType = "code"
-	OIDCIdTokenResponseType OIDCResponseType = "id_token"
-	OIDCNoneResponseType    OIDCResponseType = "none"
-	OIDCTokenResponseType   OIDCResponseType = "token"
+	OIDCResponseTypeOIDCCodeResponseType    OIDCResponseType = "code"
+	OIDCResponseTypeOIDCIdTokenResponseType OIDCResponseType = "id_token"
+	OIDCResponseTypeOIDCNoneResponseType    OIDCResponseType = "none"
+	OIDCResponseTypeOIDCTokenResponseType   OIDCResponseType = "token"
 )
+
+// Stores all values of OIDCResponseType enum.
+var OIDCResponseType_values = [...]OIDCResponseType{
+	OIDCResponseTypeOIDCCodeResponseType,
+	OIDCResponseTypeOIDCIdTokenResponseType,
+	OIDCResponseTypeOIDCNoneResponseType,
+	OIDCResponseTypeOIDCTokenResponseType,
+}
 
 // Defines values for TokenType.
 const (
-	Bearer TokenType = "Bearer"
+	TokenTypeBearer TokenType = "Bearer"
 )
+
+// Stores all values of TokenType enum.
+var TokenType_values = [...]TokenType{
+	TokenTypeBearer,
+}
+
+// Error defines model for Error.
+type Error struct {
+	// Code Error codes
+	//
+	// | Code | Description |
+	// |------|-------------|
+	// | `internal_error` | Internal server error |
+	// | `invalid_request` | Invalid request, missing or invalid parameters |
+	// | `invalid_token` | Malformed, expired or revoked token |
+	// | `insufficient_scope` | The required scope was not granted to the used token |
+	// | `insufficient_permission` | The user does not have the permission to use this endpoint |
+	Code ErrorCode `json:"code" bson:"code"`
+
+	// ErrorDescription Description that can be displayed to the user
+	ErrorDescription *string `json:"error_description,omitempty" bson:"error_description"`
+	Message          string  `json:"message" bson:"message"`
+}
+
+// ErrorCode Error codes
+//
+// | Code | Description |
+// |------|-------------|
+// | `internal_error` | Internal server error |
+// | `invalid_request` | Invalid request, missing or invalid parameters |
+// | `invalid_token` | Malformed, expired or revoked token |
+// | `insufficient_scope` | The required scope was not granted to the used token |
+// | `insufficient_permission` | The user does not have the permission to use this endpoint |
+type ErrorCode string
+
+// GlobalPermission A global permission that is not club-specific. Mostly admin permissions, that will need
+// reauthentication and 2FA to be granted to oauth clients.
+type GlobalPermission string
 
 // OAuthAccessToken defines model for OAuthAccessToken.
 type OAuthAccessToken = string
@@ -149,11 +289,168 @@ type OAuthScope string
 // OAuthTokenEndpointErrorCode Token endpoint error code as defined in section 5.2 of [RFC6749](https://datatracker.ietf.org/doc/html/rfc6749#section-5.2)
 type OAuthTokenEndpointErrorCode string
 
+// OIDCAddress Address claim, as defined in the [OIDC spec](https://openid.net/specs/openid-connect-core-1_0.html#AddressClaim)
+type OIDCAddress struct {
+	// Country Country name component.
+	Country *string `json:"country,omitempty" bson:"country"`
+
+	// Formatted Full mailing address, formatted for display or use on a mailing label. This field MAY contain multiple lines, separated by newlines. Newlines can be represented either as a carriage return/line feed pair ("\r\n") or as a single line feed character ("\n").
+	Formatted *string `json:"formatted,omitempty" bson:"formatted"`
+
+	// Locality City or locality component.
+	Locality *string `json:"locality,omitempty" bson:"locality"`
+
+	// PostalCode Zip code or postal code component.
+	PostalCode *int `json:"postal_code,omitempty" bson:"postal_code"`
+
+	// Region State, province, prefecture, or region component.
+	Region *string `json:"region,omitempty" bson:"region"`
+
+	// StreetAddress Full street address component, which MAY include house number, street name, Post Office Box, and multi-line extended street address information. This field MAY contain multiple lines, separated by newlines. Newlines can be represented either as a carriage return/line feed pair ("\r\n") or as a single line feed character ("\n").
+	StreetAddress *string `json:"street_address,omitempty" bson:"street_address"`
+}
+
 // OIDCResponseType OpenID Connect `response_type`
 type OIDCResponseType string
 
+// Role Global role that can be used to group permissions
+type Role struct {
+	// DefaultRole True if the role is a default role that cannot be modified.
+	DefaultRole *bool   `json:"default_role,omitempty" bson:"default_role"`
+	Id          *uint64 `json:"id,omitempty" bson:"id"`
+	Name        *string `json:"name,omitempty" bson:"name"`
+
+	// Permissions List of global permissions granted by this role
+	Permissions *[]GlobalPermission `json:"permissions,omitempty" bson:"permissions"`
+}
+
 // TokenType Type of token to use for authentication. Currently, only "Bearer" is supported.
 type TokenType string
+
+// User defines model for User.
+type User struct {
+	// Address Address claim, as defined in the [OIDC spec](https://openid.net/specs/openid-connect-core-1_0.html#AddressClaim)
+	Address *OIDCAddress `json:"address,omitempty" bson:"address"`
+
+	// Birthdate End-User's birthday, represented as an ISO 8601-1 YYYY-MM-DD format. The year MAY be 0000, indicating that it is omitted.
+	Birthdate *string `json:"birthdate,omitempty" bson:"birthdate"`
+
+	// CreatedAt Time of creation of the user
+	CreatedAt *time.Time `json:"created_at,omitempty" bson:"created_at"`
+
+	// DeletedAt Time of deletion of the user
+	DeletedAt *time.Time `json:"deleted_at,omitempty" bson:"deleted_at"`
+
+	// Email End-User's e-mail address.
+	Email *openapi_types.Email `json:"email,omitempty" bson:"email"`
+
+	// EmailVerified True if the End-User's e-mail address has been verified; otherwise false.
+	//
+	// Here, an e-mail address is verified if it was registered via google oauth or manually verified by an administrator.
+	EmailVerified *bool `json:"email_verified,omitempty" bson:"email_verified"`
+
+	// FamilyName Last name of the End-User
+	FamilyName *string `json:"family_name,omitempty" bson:"family_name"`
+
+	// GivenName First name of the End-User
+	GivenName *string `json:"given_name,omitempty" bson:"given_name"`
+
+	// Hidden Is this user hidden (eg an application user)
+	Hidden *bool `json:"hidden,omitempty" bson:"hidden"`
+
+	// Name End-User's full name in displayable form, including all name parts
+	Name *string `json:"name,omitempty" bson:"name"`
+
+	// Nickname Casual name of the End-User. Same as `given_name` if not specified.
+	Nickname *string `json:"nickname,omitempty" bson:"nickname"`
+
+	// PhoneNumber End-User's preferred telephone number.
+	PhoneNumber *string `json:"phone_number,omitempty" bson:"phone_number"`
+
+	// PhoneNumberVerified True if the End-User's phone number has been verified; otherwise false.
+	PhoneNumberVerified *bool `json:"phone_number_verified,omitempty" bson:"phone_number_verified"`
+
+	// Picture URL of the End-User's profile picture.
+	Picture *string `json:"picture,omitempty" bson:"picture"`
+
+	// Sub Subject Identifier. A locally unique and never reassigned identifier for the End-User, which is intended to be consumed by the Client.
+	Sub *string `json:"sub,omitempty" bson:"sub"`
+
+	// UpdatedAt Time the End-User's information was last updated. (timestamp)
+	UpdatedAt *int `json:"updated_at,omitempty" bson:"updated_at"`
+}
+
+// UserInfo Provides information about an end user.
+type UserInfo struct {
+	// Address Address claim, as defined in the [OIDC spec](https://openid.net/specs/openid-connect-core-1_0.html#AddressClaim)
+	Address *OIDCAddress `json:"address,omitempty" bson:"address"`
+
+	// Birthdate End-User's birthday, represented as an ISO 8601-1 YYYY-MM-DD format. The year MAY be 0000, indicating that it is omitted.
+	Birthdate *string `json:"birthdate,omitempty" bson:"birthdate"`
+
+	// Email End-User's e-mail address.
+	Email *openapi_types.Email `json:"email,omitempty" bson:"email"`
+
+	// EmailVerified True if the End-User's e-mail address has been verified; otherwise false.
+	//
+	// Here, an e-mail address is verified if it was registered via google oauth or manually verified by an administrator.
+	EmailVerified *bool `json:"email_verified,omitempty" bson:"email_verified"`
+
+	// FamilyName Last name of the End-User
+	FamilyName *string `json:"family_name,omitempty" bson:"family_name"`
+
+	// GivenName First name of the End-User
+	GivenName *string `json:"given_name,omitempty" bson:"given_name"`
+
+	// Name End-User's full name in displayable form, including all name parts
+	Name *string `json:"name,omitempty" bson:"name"`
+
+	// Nickname Casual name of the End-User. Same as `given_name` if not specified.
+	Nickname *string `json:"nickname,omitempty" bson:"nickname"`
+
+	// PhoneNumber End-User's preferred telephone number.
+	PhoneNumber *string `json:"phone_number,omitempty" bson:"phone_number"`
+
+	// PhoneNumberVerified True if the End-User's phone number has been verified; otherwise false.
+	PhoneNumberVerified *bool `json:"phone_number_verified,omitempty" bson:"phone_number_verified"`
+
+	// Picture URL of the End-User's profile picture.
+	Picture *string `json:"picture,omitempty" bson:"picture"`
+
+	// Sub Subject Identifier. A locally unique and never reassigned identifier for the End-User, which is intended to be consumed by the Client.
+	Sub *string `json:"sub,omitempty" bson:"sub"`
+
+	// UpdatedAt Time the End-User's information was last updated. (timestamp)
+	UpdatedAt *int `json:"updated_at,omitempty" bson:"updated_at"`
+}
+
+// UserSummary Summary of a user, with limited information
+type UserSummary struct {
+	// FamilyName Last name of the user
+	FamilyName string `json:"family_name" bson:"family_name"`
+
+	// GivenName First name of the user
+	GivenName string  `json:"given_name" bson:"given_name"`
+	Id        *uint64 `json:"id,omitempty" bson:"id"`
+
+	// Name Display name of the user
+	Name string `json:"name" bson:"name"`
+
+	// Nickname Casual name of the user.
+	Nickname *string `json:"nickname,omitempty" bson:"nickname"`
+
+	// Picture URL of the user's profile picture.
+	Picture *string `json:"picture,omitempty" bson:"picture"`
+}
+
+// Forbidden defines model for Forbidden.
+type Forbidden = Error
+
+// NotFound defines model for NotFound.
+type NotFound = Error
+
+// Unauthorized defines model for Unauthorized.
+type Unauthorized = Error
 
 // StartAuthorizationFlowParams defines parameters for StartAuthorizationFlow.
 type StartAuthorizationFlowParams struct {
@@ -183,8 +480,29 @@ type IssueOauthTokenFormdataBody struct {
 	union json.RawMessage `bson:"union"`
 }
 
+// DeleteUserRoleJSONBody defines parameters for DeleteUserRole.
+type DeleteUserRoleJSONBody = uint64
+
+// PostUserRoleJSONBody defines parameters for PostUserRole.
+type PostUserRoleJSONBody = uint64
+
+// PutUserRoleJSONBody defines parameters for PutUserRole.
+type PutUserRoleJSONBody = []uint64
+
 // IssueOauthTokenFormdataRequestBody defines body for IssueOauthToken for application/x-www-form-urlencoded ContentType.
 type IssueOauthTokenFormdataRequestBody IssueOauthTokenFormdataBody
+
+// PatchUserJSONRequestBody defines body for PatchUser for application/json ContentType.
+type PatchUserJSONRequestBody = User
+
+// DeleteUserRoleJSONRequestBody defines body for DeleteUserRole for application/json ContentType.
+type DeleteUserRoleJSONRequestBody = DeleteUserRoleJSONBody
+
+// PostUserRoleJSONRequestBody defines body for PostUserRole for application/json ContentType.
+type PostUserRoleJSONRequestBody = PostUserRoleJSONBody
+
+// PutUserRoleJSONRequestBody defines body for PutUserRole for application/json ContentType.
+type PutUserRoleJSONRequestBody = PutUserRoleJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -197,6 +515,39 @@ type ServerInterface interface {
 	// OAuth token endpoint
 	// (POST /oauth/token)
 	IssueOauthToken(ctx echo.Context) error
+	// Get all informations about a user.
+	// (GET /user/{user_id})
+	GetUser(ctx echo.Context, userId int) error
+	// Modify a user
+	// (PATCH /user/{user_id})
+	PatchUser(ctx echo.Context, userId int) error
+	// Get public information about a user
+	// (GET /user/{user_id}/profile)
+	GetUserProfile(ctx echo.Context, userId int) error
+	// Remove a role from a user
+	// (DELETE /user/{user_id}/roles)
+	DeleteUserRole(ctx echo.Context, userId int) error
+	// Get user roles
+	// (GET /user/{user_id}/roles)
+	GetUserRoles(ctx echo.Context, userId int) error
+	// Give a role to a user
+	// (POST /user/{user_id}/roles)
+	PostUserRole(ctx echo.Context, userId int) error
+	// Set the roles of a user
+	// (PUT /user/{user_id}/roles)
+	PutUserRole(ctx echo.Context, userId int) error
+	// Get your own user information
+	// (GET /userinfo)
+	GetUserinfo(ctx echo.Context) error
+	// Change user information
+	// (PATCH /userinfo)
+	PatchUserInfo(ctx echo.Context) error
+	// Get a list of all users
+	// (GET /users)
+	GetUsers(ctx echo.Context) error
+	// Create a user
+	// (POST /users)
+	PostUsers(ctx echo.Context) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -279,6 +630,200 @@ func (w *ServerInterfaceWrapper) IssueOauthToken(ctx echo.Context) error {
 	return err
 }
 
+// GetUser converts echo context to params.
+func (w *ServerInterfaceWrapper) GetUser(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	ctx.Set(SessionScopes, []string{})
+
+	ctx.Set(OauthTokenScopes, []string{"userinfo:admin_read"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetUser(ctx, userId)
+	return err
+}
+
+// PatchUser converts echo context to params.
+func (w *ServerInterfaceWrapper) PatchUser(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	ctx.Set(OauthTokenScopes, []string{"userinfo:admin_write"})
+
+	ctx.Set(SessionScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PatchUser(ctx, userId)
+	return err
+}
+
+// GetUserProfile converts echo context to params.
+func (w *ServerInterfaceWrapper) GetUserProfile(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	ctx.Set(SessionScopes, []string{})
+
+	ctx.Set(OauthTokenScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetUserProfile(ctx, userId)
+	return err
+}
+
+// DeleteUserRole converts echo context to params.
+func (w *ServerInterfaceWrapper) DeleteUserRole(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	ctx.Set(SessionScopes, []string{})
+
+	ctx.Set(OauthTokenScopes, []string{"user_roles:admin_write"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.DeleteUserRole(ctx, userId)
+	return err
+}
+
+// GetUserRoles converts echo context to params.
+func (w *ServerInterfaceWrapper) GetUserRoles(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	ctx.Set(SessionScopes, []string{})
+
+	ctx.Set(OauthTokenScopes, []string{"user_roles:admin_read"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetUserRoles(ctx, userId)
+	return err
+}
+
+// PostUserRole converts echo context to params.
+func (w *ServerInterfaceWrapper) PostUserRole(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	ctx.Set(SessionScopes, []string{})
+
+	ctx.Set(OauthTokenScopes, []string{"user_roles:admin_write"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostUserRole(ctx, userId)
+	return err
+}
+
+// PutUserRole converts echo context to params.
+func (w *ServerInterfaceWrapper) PutUserRole(ctx echo.Context) error {
+	var err error
+	// ------------- Path parameter "user_id" -------------
+	var userId int
+
+	err = runtime.BindStyledParameterWithOptions("simple", "user_id", ctx.Param("user_id"), &userId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		return echo.NewHTTPError(http.StatusBadRequest, fmt.Sprintf("Invalid format for parameter user_id: %s", err))
+	}
+
+	ctx.Set(SessionScopes, []string{})
+
+	ctx.Set(OauthTokenScopes, []string{"user_roles:admin_write"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PutUserRole(ctx, userId)
+	return err
+}
+
+// GetUserinfo converts echo context to params.
+func (w *ServerInterfaceWrapper) GetUserinfo(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionScopes, []string{})
+
+	ctx.Set(OauthTokenScopes, []string{"openid"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetUserinfo(ctx)
+	return err
+}
+
+// PatchUserInfo converts echo context to params.
+func (w *ServerInterfaceWrapper) PatchUserInfo(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(SessionScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PatchUserInfo(ctx)
+	return err
+}
+
+// GetUsers converts echo context to params.
+func (w *ServerInterfaceWrapper) GetUsers(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(Global_permsScopes, []string{"MANAGE_USERS_INFO"})
+
+	ctx.Set(SessionScopes, []string{})
+
+	ctx.Set(OauthTokenScopes, []string{"userinfo:admin_read"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetUsers(ctx)
+	return err
+}
+
+// PostUsers converts echo context to params.
+func (w *ServerInterfaceWrapper) PostUsers(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(Global_permsScopes, []string{"MANAGE_USERS_INFO"})
+
+	ctx.Set(SessionScopes, []string{})
+
+	ctx.Set(OauthTokenScopes, []string{"userinfo:admin_write"})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.PostUsers(ctx)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -310,8 +855,25 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 	router.GET(baseURL+"/health", wrapper.GetHealth)
 	router.GET(baseURL+"/oauth/authorize", wrapper.StartAuthorizationFlow)
 	router.POST(baseURL+"/oauth/token", wrapper.IssueOauthToken)
+	router.GET(baseURL+"/user/:user_id", wrapper.GetUser)
+	router.PATCH(baseURL+"/user/:user_id", wrapper.PatchUser)
+	router.GET(baseURL+"/user/:user_id/profile", wrapper.GetUserProfile)
+	router.DELETE(baseURL+"/user/:user_id/roles", wrapper.DeleteUserRole)
+	router.GET(baseURL+"/user/:user_id/roles", wrapper.GetUserRoles)
+	router.POST(baseURL+"/user/:user_id/roles", wrapper.PostUserRole)
+	router.PUT(baseURL+"/user/:user_id/roles", wrapper.PutUserRole)
+	router.GET(baseURL+"/userinfo", wrapper.GetUserinfo)
+	router.PATCH(baseURL+"/userinfo", wrapper.PatchUserInfo)
+	router.GET(baseURL+"/users", wrapper.GetUsers)
+	router.POST(baseURL+"/users", wrapper.PostUsers)
 
 }
+
+type ForbiddenJSONResponse Error
+
+type NotFoundJSONResponse Error
+
+type UnauthorizedJSONResponse Error
 
 type GetHealthRequestObject struct {
 }
@@ -411,6 +973,451 @@ func (response IssueOauthToken401JSONResponse) VisitIssueOauthTokenResponse(w ht
 	return json.NewEncoder(w).Encode(response)
 }
 
+type GetUserRequestObject struct {
+	UserId int `json:"user_id" bson:"user_id"`
+}
+
+type GetUserResponseObject interface {
+	VisitGetUserResponse(w http.ResponseWriter) error
+}
+
+type GetUser200JSONResponse User
+
+func (response GetUser200JSONResponse) VisitGetUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUser401JSONResponse struct {
+	UnauthorizedJSONResponse `bson:"unauthorized_json_response"`
+}
+
+func (response GetUser401JSONResponse) VisitGetUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUser403JSONResponse struct {
+	ForbiddenJSONResponse `bson:"forbidden_json_response"`
+}
+
+func (response GetUser403JSONResponse) VisitGetUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchUserRequestObject struct {
+	UserId int                       `json:"user_id" bson:"user_id"`
+	Body   *PatchUserJSONRequestBody `bson:"body"`
+}
+
+type PatchUserResponseObject interface {
+	VisitPatchUserResponse(w http.ResponseWriter) error
+}
+
+type PatchUser200JSONResponse User
+
+func (response PatchUser200JSONResponse) VisitPatchUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchUser401JSONResponse struct {
+	UnauthorizedJSONResponse `bson:"unauthorized_json_response"`
+}
+
+func (response PatchUser401JSONResponse) VisitPatchUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchUser403JSONResponse struct {
+	ForbiddenJSONResponse `bson:"forbidden_json_response"`
+}
+
+func (response PatchUser403JSONResponse) VisitPatchUserResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserProfileRequestObject struct {
+	UserId int `json:"user_id" bson:"user_id"`
+}
+
+type GetUserProfileResponseObject interface {
+	VisitGetUserProfileResponse(w http.ResponseWriter) error
+}
+
+type GetUserProfile200JSONResponse UserSummary
+
+func (response GetUserProfile200JSONResponse) VisitGetUserProfileResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserProfile401JSONResponse struct {
+	UnauthorizedJSONResponse `bson:"unauthorized_json_response"`
+}
+
+func (response GetUserProfile401JSONResponse) VisitGetUserProfileResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserProfile403JSONResponse struct {
+	ForbiddenJSONResponse `bson:"forbidden_json_response"`
+}
+
+func (response GetUserProfile403JSONResponse) VisitGetUserProfileResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteUserRoleRequestObject struct {
+	UserId int                            `json:"user_id" bson:"user_id"`
+	Body   *DeleteUserRoleJSONRequestBody `bson:"body"`
+}
+
+type DeleteUserRoleResponseObject interface {
+	VisitDeleteUserRoleResponse(w http.ResponseWriter) error
+}
+
+type DeleteUserRole204Response struct {
+}
+
+func (response DeleteUserRole204Response) VisitDeleteUserRoleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteUserRole401JSONResponse struct {
+	UnauthorizedJSONResponse `bson:"unauthorized_json_response"`
+}
+
+func (response DeleteUserRole401JSONResponse) VisitDeleteUserRoleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteUserRole403JSONResponse struct {
+	ForbiddenJSONResponse `bson:"forbidden_json_response"`
+}
+
+func (response DeleteUserRole403JSONResponse) VisitDeleteUserRoleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserRolesRequestObject struct {
+	UserId int `json:"user_id" bson:"user_id"`
+}
+
+type GetUserRolesResponseObject interface {
+	VisitGetUserRolesResponse(w http.ResponseWriter) error
+}
+
+type GetUserRoles200JSONResponse []Role
+
+func (response GetUserRoles200JSONResponse) VisitGetUserRolesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserRoles401JSONResponse struct {
+	UnauthorizedJSONResponse `bson:"unauthorized_json_response"`
+}
+
+func (response GetUserRoles401JSONResponse) VisitGetUserRolesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserRoles403JSONResponse struct {
+	ForbiddenJSONResponse `bson:"forbidden_json_response"`
+}
+
+func (response GetUserRoles403JSONResponse) VisitGetUserRolesResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostUserRoleRequestObject struct {
+	UserId int                          `json:"user_id" bson:"user_id"`
+	Body   *PostUserRoleJSONRequestBody `bson:"body"`
+}
+
+type PostUserRoleResponseObject interface {
+	VisitPostUserRoleResponse(w http.ResponseWriter) error
+}
+
+type PostUserRole204Response struct {
+}
+
+func (response PostUserRole204Response) VisitPostUserRoleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type PostUserRole400JSONResponse Error
+
+func (response PostUserRole400JSONResponse) VisitPostUserRoleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostUserRole401JSONResponse struct {
+	UnauthorizedJSONResponse `bson:"unauthorized_json_response"`
+}
+
+func (response PostUserRole401JSONResponse) VisitPostUserRoleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostUserRole403JSONResponse struct {
+	ForbiddenJSONResponse `bson:"forbidden_json_response"`
+}
+
+func (response PostUserRole403JSONResponse) VisitPostUserRoleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostUserRole404JSONResponse struct {
+	NotFoundJSONResponse `bson:"not_found_json_response"`
+}
+
+func (response PostUserRole404JSONResponse) VisitPostUserRoleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutUserRoleRequestObject struct {
+	UserId int                         `json:"user_id" bson:"user_id"`
+	Body   *PutUserRoleJSONRequestBody `bson:"body"`
+}
+
+type PutUserRoleResponseObject interface {
+	VisitPutUserRoleResponse(w http.ResponseWriter) error
+}
+
+type PutUserRole204Response struct {
+}
+
+func (response PutUserRole204Response) VisitPutUserRoleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type PutUserRole401JSONResponse struct {
+	UnauthorizedJSONResponse `bson:"unauthorized_json_response"`
+}
+
+func (response PutUserRole401JSONResponse) VisitPutUserRoleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PutUserRole403JSONResponse struct {
+	ForbiddenJSONResponse `bson:"forbidden_json_response"`
+}
+
+func (response PutUserRole403JSONResponse) VisitPutUserRoleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserinfoRequestObject struct {
+}
+
+type GetUserinfoResponseObject interface {
+	VisitGetUserinfoResponse(w http.ResponseWriter) error
+}
+
+type GetUserinfo200JSONResponse UserInfo
+
+func (response GetUserinfo200JSONResponse) VisitGetUserinfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserinfo401JSONResponse struct {
+	UnauthorizedJSONResponse `bson:"unauthorized_json_response"`
+}
+
+func (response GetUserinfo401JSONResponse) VisitGetUserinfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUserinfo403JSONResponse struct {
+	ForbiddenJSONResponse `bson:"forbidden_json_response"`
+}
+
+func (response GetUserinfo403JSONResponse) VisitGetUserinfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchUserInfoRequestObject struct {
+}
+
+type PatchUserInfoResponseObject interface {
+	VisitPatchUserInfoResponse(w http.ResponseWriter) error
+}
+
+type PatchUserInfo204Response struct {
+}
+
+func (response PatchUserInfo204Response) VisitPatchUserInfoResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type PatchUserInfo401JSONResponse struct {
+	UnauthorizedJSONResponse `bson:"unauthorized_json_response"`
+}
+
+func (response PatchUserInfo401JSONResponse) VisitPatchUserInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PatchUserInfo403JSONResponse struct {
+	ForbiddenJSONResponse `bson:"forbidden_json_response"`
+}
+
+func (response PatchUserInfo403JSONResponse) VisitPatchUserInfoResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUsersRequestObject struct {
+}
+
+type GetUsersResponseObject interface {
+	VisitGetUsersResponse(w http.ResponseWriter) error
+}
+
+type GetUsers200JSONResponse []User
+
+func (response GetUsers200JSONResponse) VisitGetUsersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUsers401JSONResponse struct {
+	UnauthorizedJSONResponse `bson:"unauthorized_json_response"`
+}
+
+func (response GetUsers401JSONResponse) VisitGetUsersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetUsers403JSONResponse struct {
+	ForbiddenJSONResponse `bson:"forbidden_json_response"`
+}
+
+func (response GetUsers403JSONResponse) VisitGetUsersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostUsersRequestObject struct {
+}
+
+type PostUsersResponseObject interface {
+	VisitPostUsersResponse(w http.ResponseWriter) error
+}
+
+type PostUsers200JSONResponse []User
+
+func (response PostUsers200JSONResponse) VisitPostUsersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostUsers401JSONResponse struct {
+	UnauthorizedJSONResponse `bson:"unauthorized_json_response"`
+}
+
+func (response PostUsers401JSONResponse) VisitPostUsersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type PostUsers403JSONResponse struct {
+	ForbiddenJSONResponse `bson:"forbidden_json_response"`
+}
+
+func (response PostUsers403JSONResponse) VisitPostUsersResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
 
@@ -422,6 +1429,39 @@ type StrictServerInterface interface {
 	// OAuth token endpoint
 	// (POST /oauth/token)
 	IssueOauthToken(ctx context.Context, request IssueOauthTokenRequestObject) (IssueOauthTokenResponseObject, error)
+	// Get all informations about a user.
+	// (GET /user/{user_id})
+	GetUser(ctx context.Context, request GetUserRequestObject) (GetUserResponseObject, error)
+	// Modify a user
+	// (PATCH /user/{user_id})
+	PatchUser(ctx context.Context, request PatchUserRequestObject) (PatchUserResponseObject, error)
+	// Get public information about a user
+	// (GET /user/{user_id}/profile)
+	GetUserProfile(ctx context.Context, request GetUserProfileRequestObject) (GetUserProfileResponseObject, error)
+	// Remove a role from a user
+	// (DELETE /user/{user_id}/roles)
+	DeleteUserRole(ctx context.Context, request DeleteUserRoleRequestObject) (DeleteUserRoleResponseObject, error)
+	// Get user roles
+	// (GET /user/{user_id}/roles)
+	GetUserRoles(ctx context.Context, request GetUserRolesRequestObject) (GetUserRolesResponseObject, error)
+	// Give a role to a user
+	// (POST /user/{user_id}/roles)
+	PostUserRole(ctx context.Context, request PostUserRoleRequestObject) (PostUserRoleResponseObject, error)
+	// Set the roles of a user
+	// (PUT /user/{user_id}/roles)
+	PutUserRole(ctx context.Context, request PutUserRoleRequestObject) (PutUserRoleResponseObject, error)
+	// Get your own user information
+	// (GET /userinfo)
+	GetUserinfo(ctx context.Context, request GetUserinfoRequestObject) (GetUserinfoResponseObject, error)
+	// Change user information
+	// (PATCH /userinfo)
+	PatchUserInfo(ctx context.Context, request PatchUserInfoRequestObject) (PatchUserInfoResponseObject, error)
+	// Get a list of all users
+	// (GET /users)
+	GetUsers(ctx context.Context, request GetUsersRequestObject) (GetUsersResponseObject, error)
+	// Create a user
+	// (POST /users)
+	PostUsers(ctx context.Context, request PostUsersRequestObject) (PostUsersResponseObject, error)
 }
 
 type StrictHandlerFunc = strictecho.StrictEchoHandlerFunc
@@ -517,62 +1557,390 @@ func (sh *strictHandler) IssueOauthToken(ctx echo.Context) error {
 	return nil
 }
 
+// GetUser operation middleware
+func (sh *strictHandler) GetUser(ctx echo.Context, userId int) error {
+	var request GetUserRequestObject
+
+	request.UserId = userId
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUser(ctx.Request().Context(), request.(GetUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetUserResponseObject); ok {
+		return validResponse.VisitGetUserResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PatchUser operation middleware
+func (sh *strictHandler) PatchUser(ctx echo.Context, userId int) error {
+	var request PatchUserRequestObject
+
+	request.UserId = userId
+
+	var body PatchUserJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PatchUser(ctx.Request().Context(), request.(PatchUserRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PatchUser")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PatchUserResponseObject); ok {
+		return validResponse.VisitPatchUserResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetUserProfile operation middleware
+func (sh *strictHandler) GetUserProfile(ctx echo.Context, userId int) error {
+	var request GetUserProfileRequestObject
+
+	request.UserId = userId
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserProfile(ctx.Request().Context(), request.(GetUserProfileRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserProfile")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetUserProfileResponseObject); ok {
+		return validResponse.VisitGetUserProfileResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// DeleteUserRole operation middleware
+func (sh *strictHandler) DeleteUserRole(ctx echo.Context, userId int) error {
+	var request DeleteUserRoleRequestObject
+
+	request.UserId = userId
+
+	var body DeleteUserRoleJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteUserRole(ctx.Request().Context(), request.(DeleteUserRoleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteUserRole")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(DeleteUserRoleResponseObject); ok {
+		return validResponse.VisitDeleteUserRoleResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetUserRoles operation middleware
+func (sh *strictHandler) GetUserRoles(ctx echo.Context, userId int) error {
+	var request GetUserRolesRequestObject
+
+	request.UserId = userId
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserRoles(ctx.Request().Context(), request.(GetUserRolesRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserRoles")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetUserRolesResponseObject); ok {
+		return validResponse.VisitGetUserRolesResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PostUserRole operation middleware
+func (sh *strictHandler) PostUserRole(ctx echo.Context, userId int) error {
+	var request PostUserRoleRequestObject
+
+	request.UserId = userId
+
+	var body PostUserRoleJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PostUserRole(ctx.Request().Context(), request.(PostUserRoleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostUserRole")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PostUserRoleResponseObject); ok {
+		return validResponse.VisitPostUserRoleResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PutUserRole operation middleware
+func (sh *strictHandler) PutUserRole(ctx echo.Context, userId int) error {
+	var request PutUserRoleRequestObject
+
+	request.UserId = userId
+
+	var body PutUserRoleJSONRequestBody
+	if err := ctx.Bind(&body); err != nil {
+		return err
+	}
+	request.Body = &body
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PutUserRole(ctx.Request().Context(), request.(PutUserRoleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PutUserRole")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PutUserRoleResponseObject); ok {
+		return validResponse.VisitPutUserRoleResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetUserinfo operation middleware
+func (sh *strictHandler) GetUserinfo(ctx echo.Context) error {
+	var request GetUserinfoRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUserinfo(ctx.Request().Context(), request.(GetUserinfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUserinfo")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetUserinfoResponseObject); ok {
+		return validResponse.VisitGetUserinfoResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PatchUserInfo operation middleware
+func (sh *strictHandler) PatchUserInfo(ctx echo.Context) error {
+	var request PatchUserInfoRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PatchUserInfo(ctx.Request().Context(), request.(PatchUserInfoRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PatchUserInfo")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PatchUserInfoResponseObject); ok {
+		return validResponse.VisitPatchUserInfoResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// GetUsers operation middleware
+func (sh *strictHandler) GetUsers(ctx echo.Context) error {
+	var request GetUsersRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.GetUsers(ctx.Request().Context(), request.(GetUsersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetUsers")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(GetUsersResponseObject); ok {
+		return validResponse.VisitGetUsersResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
+// PostUsers operation middleware
+func (sh *strictHandler) PostUsers(ctx echo.Context) error {
+	var request PostUsersRequestObject
+
+	handler := func(ctx echo.Context, request interface{}) (interface{}, error) {
+		return sh.ssi.PostUsers(ctx.Request().Context(), request.(PostUsersRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PostUsers")
+	}
+
+	response, err := handler(ctx, request)
+
+	if err != nil {
+		return err
+	} else if validResponse, ok := response.(PostUsersResponseObject); ok {
+		return validResponse.VisitPostUsersResponse(ctx.Response())
+	} else if response != nil {
+		return fmt.Errorf("unexpected response type: %T", response)
+	}
+	return nil
+}
+
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"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",
+	"3az+NwAA///QI7d0MVwAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

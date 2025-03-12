@@ -9,5 +9,6 @@ generate:
 output-options:
   user-templates:
     constants.tmpl: "./tools/oapi-codegen-templates/enum-values.tmpl"
+    imports.tmpl: "./tools/oapi-codegen-templates/imports.tmpl"
 compatibility:
   always-prefix-enum-values: true

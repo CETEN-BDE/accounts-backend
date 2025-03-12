@@ -9,6 +9,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -22,6 +23,8 @@ import (
 	strictecho "github.com/oapi-codegen/runtime/strictmiddleware/echo"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+var errInvalidEnumValue error = errors.New("invalid enum value")
 
 const (
 	Global_permsScopes = "global_perms.Scopes"
@@ -48,6 +51,20 @@ var ErrorCode_values = [...]ErrorCode{
 	ErrorCodeInvalidToken,
 }
 
+// Parse enum values
+func MustParseErrorCode(value ErrorCode) error {
+	switch value {
+	case ErrorCodeInsufficientPermission:
+	case ErrorCodeInsufficientScope:
+	case ErrorCodeInternalError:
+	case ErrorCodeInvalidRequest:
+	case ErrorCodeInvalidToken:
+
+		return nil
+	}
+	return errInvalidEnumValue
+}
+
 // Defines values for GlobalPermission.
 const (
 	GlobalPermissionADMIN            GlobalPermission = "ADMIN"
@@ -66,6 +83,20 @@ var GlobalPermission_values = [...]GlobalPermission{
 	GlobalPermissionMANAGEUSERSROLES,
 }
 
+// Parse enum values
+func MustParseGlobalPermission(value GlobalPermission) error {
+	switch value {
+	case GlobalPermissionADMIN:
+	case GlobalPermissionMANAGECLUBS:
+	case GlobalPermissionMANAGEROLES:
+	case GlobalPermissionMANAGEUSERSINFO:
+	case GlobalPermissionMANAGEUSERSROLES:
+
+		return nil
+	}
+	return errInvalidEnumValue
+}
+
 // Defines values for OAuthAuthorizationCodeTokenRequestGrantType.
 const (
 	OAuthAuthorizationCodeTokenRequestGrantTypeAuthorizationCode OAuthAuthorizationCodeTokenRequestGrantType = "authorization_code"
@@ -74,6 +105,16 @@ const (
 // Stores all values of OAuthAuthorizationCodeTokenRequestGrantType enum.
 var OAuthAuthorizationCodeTokenRequestGrantType_values = [...]OAuthAuthorizationCodeTokenRequestGrantType{
 	OAuthAuthorizationCodeTokenRequestGrantTypeAuthorizationCode,
+}
+
+// Parse enum values
+func MustParseOAuthAuthorizationCodeTokenRequestGrantType(value OAuthAuthorizationCodeTokenRequestGrantType) error {
+	switch value {
+	case OAuthAuthorizationCodeTokenRequestGrantTypeAuthorizationCode:
+
+		return nil
+	}
+	return errInvalidEnumValue
 }
 
 // Defines values for OAuthAuthorizationErrorCode.
@@ -98,6 +139,22 @@ var OAuthAuthorizationErrorCode_values = [...]OAuthAuthorizationErrorCode{
 	OAuthAuthorizationErrorCodeUnsupportedResponseType,
 }
 
+// Parse enum values
+func MustParseOAuthAuthorizationErrorCode(value OAuthAuthorizationErrorCode) error {
+	switch value {
+	case OAuthAuthorizationErrorCodeAccessDenied:
+	case OAuthAuthorizationErrorCodeInvalidRequest:
+	case OAuthAuthorizationErrorCodeInvalidScope:
+	case OAuthAuthorizationErrorCodeServerError:
+	case OAuthAuthorizationErrorCodeTemporarilyUnavailable:
+	case OAuthAuthorizationErrorCodeUnauthorizedClient:
+	case OAuthAuthorizationErrorCodeUnsupportedResponseType:
+
+		return nil
+	}
+	return errInvalidEnumValue
+}
+
 // Defines values for OAuthClientCredentialTokenRequestGrantType.
 const (
 	OAuthClientCredentialTokenRequestGrantTypeAuthorizationCode OAuthClientCredentialTokenRequestGrantType = "authorization_code"
@@ -106,6 +163,16 @@ const (
 // Stores all values of OAuthClientCredentialTokenRequestGrantType enum.
 var OAuthClientCredentialTokenRequestGrantType_values = [...]OAuthClientCredentialTokenRequestGrantType{
 	OAuthClientCredentialTokenRequestGrantTypeAuthorizationCode,
+}
+
+// Parse enum values
+func MustParseOAuthClientCredentialTokenRequestGrantType(value OAuthClientCredentialTokenRequestGrantType) error {
+	switch value {
+	case OAuthClientCredentialTokenRequestGrantTypeAuthorizationCode:
+
+		return nil
+	}
+	return errInvalidEnumValue
 }
 
 // Defines values for OAuthScope.
@@ -150,6 +217,32 @@ var OAuthScope_values = [...]OAuthScope{
 	OAuthScopeUserinfoAdminWrite,
 }
 
+// Parse enum values
+func MustParseOAuthScope(value OAuthScope) error {
+	switch value {
+	case OAuthScopeAddress:
+	case OAuthScopeClubMembers:
+	case OAuthScopeClubMembersAdminRead:
+	case OAuthScopeClubMembersAdminWrite:
+	case OAuthScopeClubMembersWrite:
+	case OAuthScopeClubRolesAdminWrite:
+	case OAuthScopeClubRolesWrite:
+	case OAuthScopeClubs:
+	case OAuthScopeClubsAdminWrite:
+	case OAuthScopeEmail:
+	case OAuthScopeOpenid:
+	case OAuthScopePhone:
+	case OAuthScopeProfile:
+	case OAuthScopeUserRolesAdminRead:
+	case OAuthScopeUserRolesAdminWrite:
+	case OAuthScopeUserinfoAdminRead:
+	case OAuthScopeUserinfoAdminWrite:
+
+		return nil
+	}
+	return errInvalidEnumValue
+}
+
 // Defines values for OAuthTokenEndpointErrorCode.
 const (
 	OAuthTokenEndpointErrorCodeInvalidClient        OAuthTokenEndpointErrorCode = "invalid_client"
@@ -170,6 +263,21 @@ var OAuthTokenEndpointErrorCode_values = [...]OAuthTokenEndpointErrorCode{
 	OAuthTokenEndpointErrorCodeUnsupportedGrantType,
 }
 
+// Parse enum values
+func MustParseOAuthTokenEndpointErrorCode(value OAuthTokenEndpointErrorCode) error {
+	switch value {
+	case OAuthTokenEndpointErrorCodeInvalidClient:
+	case OAuthTokenEndpointErrorCodeInvalidGrant:
+	case OAuthTokenEndpointErrorCodeInvalidRequest:
+	case OAuthTokenEndpointErrorCodeInvalidScope:
+	case OAuthTokenEndpointErrorCodeUnauthorizedClient:
+	case OAuthTokenEndpointErrorCodeUnsupportedGrantType:
+
+		return nil
+	}
+	return errInvalidEnumValue
+}
+
 // Defines values for OIDCResponseType.
 const (
 	OIDCResponseTypeOIDCCodeResponseType    OIDCResponseType = "code"
@@ -186,6 +294,19 @@ var OIDCResponseType_values = [...]OIDCResponseType{
 	OIDCResponseTypeOIDCTokenResponseType,
 }
 
+// Parse enum values
+func MustParseOIDCResponseType(value OIDCResponseType) error {
+	switch value {
+	case OIDCResponseTypeOIDCCodeResponseType:
+	case OIDCResponseTypeOIDCIdTokenResponseType:
+	case OIDCResponseTypeOIDCNoneResponseType:
+	case OIDCResponseTypeOIDCTokenResponseType:
+
+		return nil
+	}
+	return errInvalidEnumValue
+}
+
 // Defines values for TokenType.
 const (
 	TokenTypeBearer TokenType = "Bearer"
@@ -194,6 +315,16 @@ const (
 // Stores all values of TokenType enum.
 var TokenType_values = [...]TokenType{
 	TokenTypeBearer,
+}
+
+// Parse enum values
+func MustParseTokenType(value TokenType) error {
+	switch value {
+	case TokenTypeBearer:
+
+		return nil
+	}
+	return errInvalidEnumValue
 }
 
 // Error defines model for Error.

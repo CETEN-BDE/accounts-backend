@@ -1,7 +1,7 @@
 package main
 
 import (
-	"accounts/internal/api"
+	"accounts/internal/api/routers"
 	"accounts/internal/autogen"
 	"accounts/internal/config"
 	"accounts/internal/db"
@@ -24,7 +24,7 @@ func main() {
 
 	defer sqlDB.Close()
 	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
-	var server autogen.ServerInterface = api.NewServer(db)
+	var server autogen.ServerInterface = routers.NewServer(db)
 
 	e := echo.New()
 

@@ -90,63 +90,55 @@ func initPermissions(db *gorm.DB) {
     logrus.Debug("Populated permissions successfully")
 }
 
+// Create a default role or update its permissions
+func createOrUpdateRole(db *gorm.DB, role *models.Role) {
+
+    var currentRole models.Role;
+    result := db.Preload("Permissions").Where(models.Role{Name: role.Name}).Limit(1).Find(&currentRole);
+
+    if result.Error != nil || result.RowsAffected == 0 {
+        db.Create(role)
+        logrus.Infof("Created %s role with id %d", role.Name, role.ID)
+
+    } else {
+
+        needs_update := false;
+
+        // Check for permissions to remove
+        for _, perm := range(currentRole.Permissions) {
+            if !slices.ContainsFunc(role.Permissions, func(p models.Permission) bool {return perm.ID == p.ID;}) {
+                needs_update = true;
+                break;
+            }
+        }
+
+        // Check for permissions to add
+        if !needs_update {
+            for _, perm := range(role.Permissions) {
+                if !slices.ContainsFunc(currentRole.Permissions, func(p models.Permission) bool {return perm.ID == p.ID;}) {
+                    needs_update = true;
+                    break;
+                }
+            }
+        }
+
+        if needs_update {
+            currentRole.Permissions = role.Permissions;
+            db.Save(&currentRole);
+
+            perm_names := make([]string, len(role.Permissions))
+            for i, p := range(role.Permissions) {
+                perm_names[i] = string(p.Name)
+            }
+            logrus.Infof("Updated %s role's permissions to %v", role.Name, perm_names)
+        }
+    }
+}
 
 // Initialize default roles
 func initDefaultRoles(db *gorm.DB) {
 
     logrus.Debug("Populating default roles");
-
-    // Create a default role or update its permissions
-    createOrUpdateRole := func(role *models.Role) {
-
-        var currentRole models.Role;
-        result := db.Preload("Permissions").Where(models.Role{Name: role.Name}).Limit(1).Find(&currentRole);
-
-        if result.Error != nil || result.RowsAffected == 0 {
-            db.Create(role)
-            logrus.Infof("Created %s role with id %d", role.Name, role.ID)
-
-        } else {
-
-            // Compare permission IDs only
-            arePermsIdEqualFunc := func(p1 models.Permission) (func(models.Permission) bool) {
-                return func(p models.Permission) bool {
-                    return p1.ID == p.ID;
-                };
-            }
-
-            needs_update := false;
-
-            // Check for permissions to remove
-            for _, perm := range(currentRole.Permissions) {
-                if !slices.ContainsFunc(role.Permissions, arePermsIdEqualFunc(perm)) {
-                    needs_update = true;
-                    break;
-                }
-            }
-
-            // Check for permissions to add
-            if !needs_update {
-                for _, perm := range(role.Permissions) {
-                    if !slices.ContainsFunc(currentRole.Permissions, arePermsIdEqualFunc(perm)) {
-                        needs_update = true;
-                        break;
-                    }
-                }
-            }
-
-            if needs_update {
-                currentRole.Permissions = role.Permissions;
-                db.Save(&currentRole);
-
-                perm_names := make([]string, len(role.Permissions))
-                for i, p := range(role.Permissions) {
-                    perm_names[i] = string(p.Name)
-                }
-                logrus.Infof("Updated %s role's permissions to %v", role.Name, perm_names)
-            }
-        }
-    }
 
     // Admin
     admin := &models.Role{
@@ -156,7 +148,7 @@ func initDefaultRoles(db *gorm.DB) {
             GlobalPermissions[autogen.GlobalPermissionADMIN],
         },
     }
-    createOrUpdateRole(admin)
+    createOrUpdateRole(db, admin)
 
     // BDE
     bde := &models.Role{
@@ -167,7 +159,7 @@ func initDefaultRoles(db *gorm.DB) {
             GlobalPermissions[autogen.GlobalPermissionMANAGECLUBS],
         },
     }
-    createOrUpdateRole(bde);
+    createOrUpdateRole(db, bde);
 
     // Bureau Restreint BDE
     bde_br := &models.Role{
@@ -178,7 +170,7 @@ func initDefaultRoles(db *gorm.DB) {
             GlobalPermissions[autogen.GlobalPermissionMANAGEUSERSROLES],
         },
     }
-    createOrUpdateRole(bde_br);
+    createOrUpdateRole(db, bde_br);
 
     logrus.Debug("Populated default roles successfully")
 }

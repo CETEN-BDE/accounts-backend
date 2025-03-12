@@ -96,42 +96,40 @@ func createOrUpdateRole(db *gorm.DB, role *models.Role) {
     var currentRole models.Role;
     result := db.Preload("Permissions").Where(models.Role{Name: role.Name}).Limit(1).Find(&currentRole);
 
+    // Create role if it does not exist
     if result.Error != nil || result.RowsAffected == 0 {
         db.Create(role)
         logrus.Infof("Created %s role with id %d", role.Name, role.ID)
+        return;
+    }
 
-    } else {
+    needs_update := false;
 
-        needs_update := false;
-
-        // Check for permissions to remove
-        for _, perm := range(currentRole.Permissions) {
-            if !slices.ContainsFunc(role.Permissions, func(p models.Permission) bool {return perm.ID == p.ID;}) {
-                needs_update = true;
-                break;
-            }
+    // Check for permissions to remove
+    for _, perm := range(currentRole.Permissions) {
+        if !slices.ContainsFunc(role.Permissions, func(p models.Permission) bool {return perm.ID == p.ID;}) {
+            needs_update = true;
+            break;
         }
+    }
 
-        // Check for permissions to add
-        if !needs_update {
-            for _, perm := range(role.Permissions) {
-                if !slices.ContainsFunc(currentRole.Permissions, func(p models.Permission) bool {return perm.ID == p.ID;}) {
-                    needs_update = true;
-                    break;
-                }
-            }
+    // Check for permissions to add
+    for _, perm := range(role.Permissions) {
+        if !slices.ContainsFunc(currentRole.Permissions, func(p models.Permission) bool {return perm.ID == p.ID;}) {
+            needs_update = true;
+            break;
         }
+    }
 
-        if needs_update {
-            currentRole.Permissions = role.Permissions;
-            db.Save(&currentRole);
+    if needs_update {
+        currentRole.Permissions = role.Permissions;
+        db.Save(&currentRole);
 
-            perm_names := make([]string, len(role.Permissions))
-            for i, p := range(role.Permissions) {
-                perm_names[i] = string(p.Name)
-            }
-            logrus.Infof("Updated %s role's permissions to %v", role.Name, perm_names)
+        perm_names := make([]string, len(role.Permissions))
+        for i, p := range(role.Permissions) {
+            perm_names[i] = string(p.Name)
         }
+        logrus.Infof("Updated %s role's permissions to %v", role.Name, perm_names)
     }
 }
 

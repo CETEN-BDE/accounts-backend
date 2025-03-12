@@ -1,6 +1,6 @@
 ![GitHub Release](https://img.shields.io/github/v/release/CETEN-BDE/accounts-backend)
 ![GitHub License](https://img.shields.io/github/license/CETEN-BDE/accounts-backend)
-![Code Climate maintainability](https://img.shields.io/codeclimate/maintainability/CETEN-BDE/accounts-backend) <!-- Remove this if you do not want the codeclimate badge-->
+[![Maintainability](https://api.codeclimate.com/v1/badges/b3ed9e002638692d956e/maintainability)](https://codeclimate.com/github/CETEN-BDE/accounts-backend/maintainability)
 
 
 ## Getting Started

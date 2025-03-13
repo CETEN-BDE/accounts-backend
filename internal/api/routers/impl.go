@@ -11,7 +11,7 @@ type Server struct {
 }
 
 // Ensure the Server type implements the autogen ServerInterface
-var _ autogen.ServerInterface = &Server{}
+var _ autogen.StrictServerInterface = Server{}
 
 func NewServer(db *gorm.DB) Server {
 	return Server{db}

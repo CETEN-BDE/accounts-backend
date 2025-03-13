@@ -2,12 +2,10 @@ package routers
 
 import (
 	"accounts/internal/autogen"
-
-	"github.com/labstack/echo/v4"
+	"context"
 )
 
 // (GET /health)
-func (s Server) GetHealth(ctx echo.Context) error {
-	autogen.GetHealth200Response{}.VisitGetHealthResponse(ctx.Response())
-	return nil
+func (s Server) GetHealth(ctx context.Context, request autogen.GetHealthRequestObject) (autogen.GetHealthResponseObject, error) {
+	return autogen.GetHealth200Response{}, nil
 }

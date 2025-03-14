@@ -11,20 +11,20 @@ type User struct {
 	Hidden bool
 	GivenName string
 	FamilyName string
-	Nickname sql.NullString
-	Picture sql.NullString
-	Email sql.NullString `gorm:"index"`
+	Nickname *string
+	Picture *string
+	Email *string `gorm:"index"`
 	EmailVerified bool
 	Birthdate sql.NullTime
-	PhoneNumber sql.NullString
+	PhoneNumber *string
 	PhoneNumberVerified bool
 
 	// Username / password authentication
-	Username sql.NullString `gorm:"index:,options:NULLS NOT DISTINCT"`
-	Password sql.NullString
+	Username *string `gorm:"index:,options:NULLS NOT DISTINCT"`
+	Password *string
 
 	// Google authentication
-	GoogleId sql.NullString `gorm:"index:,options:NULLS NOT DISTINCT"`
+	GoogleId *string `gorm:"index:,options:NULLS NOT DISTINCT"`
 
 	Roles []*Role `gorm:"many2many:user_roles"`
 	Permissions []Permission `gorm:"many2many:user_permissions;"`
